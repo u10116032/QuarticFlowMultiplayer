@@ -8,16 +8,14 @@ public class ConnectionService extends Thread {
 	private int id;
 	private Server server;
 	private Socket socket;
-	private InetAddress address;
 
 	private BufferedReader reader;
 	private PrintWriter writer;
 
-	public ConnectionService (Socket socket, InetAddress address, Server server, int id)
+	public ConnectionService (Socket socket, Server server, int id)
 	{
 		this.socket = socket;
 		this.server = server;
-		this.address = address;
 		this.id = id;
 
 		try {
@@ -88,7 +86,7 @@ public class ConnectionService extends Thread {
 			e.printStackTrace();
 		}
 		
-		server.removeClient(address, id);
+		server.removeClient(id);
  		System.out.println("Disconnect " + socket.getInetAddress());
 	}
 }

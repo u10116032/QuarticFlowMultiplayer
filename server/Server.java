@@ -9,7 +9,7 @@ public class Server{
 
 	private final int DATABASE_PORT = 41000;
 	private DatagramSocket gameDataSocket;
-	private List<InetAddress> clientAddressList;
+	private Map<Integer, SocketAddress> clientMap;
 
 	private GameDatabase gameDatabase;
 
@@ -20,7 +20,7 @@ public class Server{
 		serverSocket = new ServerSocket(SERVER_PORT);
 		gameDataSocket = new DatagramSocket(DATABASE_PORT);
 
-		clientAddressList = new ArrayList<InetAddress>();
+		clientMap = new Hashtable<Integer, SocketAddress>();
 
 		gameDatabase = new GameDatabase();
 		idList = new ArrayList<Integer>();
@@ -54,16 +54,13 @@ public class Server{
  				socket = serverSocket.accept();
  				System.out.println("Establish connection with " + socket.getInetAddress());
 
- 				InetAddress clientAddress = socket.getInetAddress();
- 				
- 				synchronized(clientAddressList) {
- 					clientAddressList.add(clientAddress);
+				int newId = -1;
+ 				synchronized(idList) {
+ 					newId = idList.remove(0);
  				}
 
-
  				// Start service for new client. 				
- 				ConnectionService connection = new ConnectionService(socket, clientAddress, this, idList.get(0));
- 				idList.remove(0);
+ 				ConnectionService connection = new ConnectionService(socket, this, newId);
  				connection.start();
  			}
  			catch (IOException e) {
@@ -72,14 +69,14 @@ public class Server{
  		}
  	}
 
- 	public void removeClient(InetAddress clientAddress, int id)
+ 	public void removeClient(int id)
  	{
- 		synchronized(clientAddressList) {
- 			clientAddressList.remove(clientAddress);
- 			gameDatabase.remove(id);
+ 		synchronized(idList) {
  			idList.add(id);
- 			System.out.println(id);
  		}
+
+ 		clientMap.remove(id);
+ 		gameDatabase.remove(id);
  	}
 
 	private void receive()
@@ -90,12 +87,11 @@ public class Server{
 			while (true) {
 				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 				gameDataSocket.receive(packet);
+
 				ClientData clientData = ClientData.parse(buffer);
 
-				if (clientData != null) {
-					//System.out.println(clientData.toString());
-					gameDatabase.put(clientData.getId(), clientData);
-				}
+				clientMap.put(clientData.getId(), packet.getSocketAddress());
+				gameDatabase.put(clientData.getId(), clientData);
 			}
 		}
 		catch (IOException e) {
@@ -125,13 +121,12 @@ public class Server{
 			 		e.printStackTrace();
 			 		continue;
 			 	}
-				synchronized(clientAddressList) {
-					for (InetAddress address : clientAddressList) {
-						DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, DATABASE_PORT);
-						gameDataSocket.send(packet);
-						//System.out.println("send");
-					}
+
+				for (SocketAddress address : clientMap.values()) {
+					DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address);
+					gameDataSocket.send(packet);
 				}
+				
 			}
 		}
 		catch (IOException e) {
