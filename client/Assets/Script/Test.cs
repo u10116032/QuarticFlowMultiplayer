@@ -30,6 +30,7 @@ public class Test : MonoBehaviour {
 		Debug.Log("Start Task");
 		int count = 0;
 		while (true) {
+			count++;
 			Debug.Log("Test count: " + count);
 
 			manager.StartConnection();

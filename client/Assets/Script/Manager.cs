@@ -43,10 +43,12 @@ public class Manager {
 		remoteEndPoint = new IPEndPoint (IPAddress.Parse (remoteIP), databasePort);
 
 		connectThread = null;
+		connectingLock = new System.Object();
 		SetConnecting(false);
 
 		receiveThread = null;
 		sendThread = null;
+		streamingLock = new System.Object();
 		SetStreaming(false);
 	}
 
