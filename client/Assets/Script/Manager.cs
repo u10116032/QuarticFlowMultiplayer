@@ -9,9 +9,7 @@ using System.IO;
 using System.Collections.Generic;
 
 public class Manager {
-	private const int MAX_MESSAGE_LENGTH = 16;
-
-	private string remoteIP = "127.0.0.1";
+	private string remoteIP = "140.112.31.113";
 	private int serverPort = 40000;
 	private int databasePort = 41000;
 	private IPEndPoint remoteEndPoint;
@@ -21,13 +19,13 @@ public class Manager {
 	private StreamWriter writer;
 
 	private Thread connectThread;
-	private bool isConnecting;
-	private bool isSetup;
+	private bool connecting;
+
 	private UdpClient udpClient;
 
 	private Thread receiveThread;
 	private Thread sendThread;
-	private bool isStreaming;
+	private bool streaming;
 
 	private Dictionary <byte, ClientData> clientDataMap;
 	private ClientData clientData;
@@ -36,14 +34,18 @@ public class Manager {
 
 	public Manager ()
 	{
-		remoteIP = "192.168.1.14";
+		remoteIP = "140.112.31.113";
 
 		clientData = new ClientData ();
 		clientDataMap = new Dictionary<byte, ClientData> ();
 		remoteEndPoint = new IPEndPoint (IPAddress.Parse (remoteIP), databasePort);
 
-		isConnecting = false;
-		isSetup = false;
+		connectThread = null;
+		SetConnecting(false);
+
+		receiveThread = null;
+		sendThread = null;
+		SetStreaming(false);
 	}
 
 	public void SetListener(Listener listener)
@@ -51,27 +53,50 @@ public class Manager {
 		this.listener = listener;
 	}
 
-	public void StartConnection ()
+	public bool StartConnection ()
 	{
-		if (!isConnecting) {
+		if (!IsConnecting()) {
+			if (connectThread != null) {
+				connectThread.Join ();
+				connectThread = null;
+			}
+
 			connectThread = new Thread(Connect);
 			connectThread.Start();
-			isConnecting = true;
+			SetConnecting(true);
+
+			return true;
 		}
+
+		return false;
 	}
 
-	public void StopConnection ()
+	public bool StopConnection ()
 	{
-		if (isConnecting) {
-			isConnecting = false;
+		if (IsConnecting()) {
 			SendRequest("CLOSE");
+			SetConnecting(false);
+
+			return true;
 		}
+
+		return false;
 	}
 
-	public void StartStream()
+	private void StartStream()
 	{
-		if (!isStreaming) {
-			udpClient = new UdpClient(41000);
+		if (!IsStreaming()) {
+			if (receiveThread != null) {
+				receiveThread.Join ();
+				receiveThread = null;
+			}
+
+			if (sendThread != null) {
+				sendThread.Join ();
+				sendThread = null;
+			}
+
+			udpClient = new UdpClient(databasePort);
 
 			receiveThread = new Thread(Receive);
 			sendThread = new Thread(Send);
@@ -79,13 +104,16 @@ public class Manager {
 			receiveThread.Start();
 			sendThread.Start();
 
-			isStreaming = true;
+			SetStreaming(true);
 		}
 	}
-	public void StopStream()
+
+	private void StopStream()
 	{
-		udpClient.Close ();
-		isStreaming = false;
+		if (IsStreaming()) {
+			udpClient.Close ();
+			SetStreaming(false);
+		}
 	}
 
 	private void SendRequest(string request) {
@@ -100,54 +128,75 @@ public class Manager {
 
 	private void ProcessMessage(String message)
 	{
+		if (message == "ALIVE")
+			return;
+		else if (message == "ISALIVE") {
+			SendRequest ("ALIVE");
+			return;
+		}
+
 		Regex regex = new Regex (":");
 		string[] tokens = regex.Split (message);
 		if (tokens [0] == "id") {
 			clientData.id = byte.Parse (tokens [1]);
-			isSetup = true;
 			StartStream ();
 		}
 			
 		Debug.Log (message);	
 	}
-
-	public void Setup()
-	{
-		if(!isSetup)
-			SendRequest ("SETUP");
-	}
-
+		
 	private void Connect () {
 		Debug.Log("Attempt connection with server...");
 
-		while (isConnecting) {
-			try {
-				tcpClient = new TcpClient(remoteIP, serverPort);
+		//while (isConnecting) {
+		try {
+			tcpClient = new TcpClient(remoteIP, serverPort);
+		
+			Debug.Log("Connected to server.");
 
-				Debug.Log("Connected to server.");
+			NetworkStream stream = tcpClient.GetStream();
+			stream.ReadTimeout = 1000;
+			reader = new StreamReader(tcpClient.GetStream());
+			writer = new StreamWriter(tcpClient.GetStream());
 
-				reader = new StreamReader(tcpClient.GetStream());
-				writer = new StreamWriter(tcpClient.GetStream());
+			SendRequest ("SETUP");
 
-				while (true) {
+			bool isAlive = true;
+			while (IsConnecting()) {
+				try {
 					string message = reader.ReadLine();
 					if (message == null)
 						break;
-					Debug.Log(message);
+					isAlive = true;
 					ProcessMessage(message);
 				}
-			}
-			catch (SocketException e) {
-				// Connect fail.
-				Debug.Log("SocketException: " + e.ErrorCode);
+				catch (IOException e) {
+					if (isAlive) {
+						Debug.Log("Keepalive");
+						SendRequest("ISALIVE");
+						isAlive = false;
+					}
+					else {
+						Debug.Log("No response from server.");
+						break;
+					}
+				}
 			}
 		}
+		catch (SocketException e) {
+			// Connect fail.
+			Debug.Log("SocketException: " + e.ErrorCode);
+		}
+
+
+		StopStream ();
 
 		if (tcpClient != null) {
 			tcpClient.Close();
 			tcpClient = null;
 		}
 
+		SetConnecting(false);
 		Debug.Log("Disconnected.");
 	}
 
@@ -156,25 +205,24 @@ public class Manager {
 		Debug.Log("Receiving stream data...");
 
 		try {
-			while (isStreaming) {
-				IPEndPoint remoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-				Byte[] receiveBytes = udpClient.Receive(ref remoteIpEndPoint);
-
+			while (IsStreaming()) {
+				IPEndPoint receiveEndPoint = new IPEndPoint(IPAddress.Any, 0);
+				Byte[] receiveBytes = udpClient.Receive(ref receiveEndPoint);
+                
 				List<ClientData> clientDataList = ClientData.Parse(receiveBytes);
-
 				foreach(ClientData data in clientDataList) {
 					if (data.id != clientData.id)
 						clientDataMap[data.id] = data;
 				}
 				
 				listener.OnDataUpdated(clientDataMap, clientData.id);
-
 			}
 		}
 		catch (Exception e) {
 			Debug.Log(e.ToString());
-			Debug.Log(e.StackTrace);
 		}
+
+		SetStreaming(false);
 	}
 
 	private void Send()
@@ -182,7 +230,7 @@ public class Manager {
 		Debug.Log("Sending stream data...");
 		try {
 			DateTime lastTime = DateTime.Now;
-			while (isStreaming){
+			while (IsStreaming()){
 				DateTime currentTime = DateTime.Now;
 				if(currentTime.Subtract(lastTime).TotalMilliseconds < 20)
 					continue;
@@ -195,6 +243,8 @@ public class Manager {
 		catch (Exception e) {
 			Debug.Log(e.StackTrace);
 		}
+
+		SetStreaming(false);
 	}
 
 	public void UpdateClientData(Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
@@ -207,21 +257,31 @@ public class Manager {
 		clientData.rightHandPose = rightHandPose;
 	}
 
-	/**
-	* Get tcp keepalive setting.
-	*
-	* @param onOff	value to turn on(1) or off(0) keepalive.
-	* @param keepAliveTime	timeout of idle to send keepalive, value in milliseconds.
-	* @param keepAliveInterval	interval between successive keepalive packets.
-	* @return optionInValue of IOControlCode.KeepAliveValues for Socket.IOControl.
-	*/
-	private byte[] GetKeepAliveSetting(int onOff, int keepAliveTime, int keepAliveInterval)
+	private bool IsConnecting()
 	{
-		byte[] buffer = new byte[12];
-		BitConverter.GetBytes(onOff).CopyTo(buffer, 0);
-		BitConverter.GetBytes(keepAliveTime).CopyTo(buffer, 4);
-		BitConverter.GetBytes(keepAliveInterval).CopyTo(buffer, 8);
+		lock (connecting) {
+			return connecting;
+		}
+	}
 
-		return buffer;
+	private void SetConnecting(bool connecting)
+	{
+		lock (this.connecting) {
+			this.connecting = connecting;
+		}
+	}
+
+	private bool IsStreaming()
+	{
+		lock (streaming) {
+			return streaming;
+		}
+	}
+
+	private void SetStreaming(bool streaming)
+	{
+		lock (this.streaming) {
+			this.streaming = streaming;
+		}
 	}
 }

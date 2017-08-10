@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.*;
 import java.io.*;
 
 public class GameDatabase {
@@ -6,8 +7,7 @@ public class GameDatabase {
 
 	public GameDatabase()
 	{
-		clientDataMap = new Hashtable<Integer, ClientData>();
-		
+		clientDataMap = new ConcurrentHashMap<Integer, ClientData>();	
 	}
 
 	public byte[] toByteArray() throws IOException

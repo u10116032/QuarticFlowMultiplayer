@@ -80,10 +80,10 @@ public class ClientData {
 	@Override
 	public String toString()
 	{
-		String thisString = "id:" + id + 
-		"head: " + head.toString() + 
-		"leftHand: " + leftHand.toString() + 
-		"rightHand: " + rightHand.toString();
+		String thisString = "id: " + id + 
+		",head: " + head.toString() + 
+		",leftHand: " + leftHand.toString() + 
+		",rightHand: " + rightHand.toString();
 
 		return thisString;
 	}

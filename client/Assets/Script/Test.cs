@@ -21,15 +21,30 @@ public class Test : MonoBehaviour {
 			manager.StartConnection ();
 		if (Input.GetKey (KeyCode.S))
 			manager.StopConnection ();
-		if (Input.GetKey (KeyCode.D))
-			manager.Setup ();
+
 		manager.UpdateClientData (head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
 	}
+
+	private IEnumerator ConnectTask()
+	{
+		Debug.Log("Start Task");
+		int count = 0;
+		while (true) {
+			Debug.Log("Test count: " + count);
+
+			manager.StartConnection();
+			yield return new WaitForSeconds(600);
+			manager.StopConnection();
+         
+         int random = Random.Range(0, 600);
+         Debug.Log("Wait for: " + random);
+         yield return new WaitForSeconds(random);
+      }
+   }
 
 	void OnApplicationQuit()
 	{
 		manager.StopConnection ();
-		manager.StopStream ();
 	}
 
 }

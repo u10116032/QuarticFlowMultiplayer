@@ -1,6 +1,7 @@
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.lang.*;
 
 public class Server{
@@ -13,19 +14,22 @@ public class Server{
 
 	private GameDatabase gameDatabase;
 
-	private List<Integer> idList;
+	private Map<Integer, Boolean> idMap;
+	private Object idMapLock;
 
  	private Server() throws Exception
  	{
 		serverSocket = new ServerSocket(SERVER_PORT);
 		gameDataSocket = new DatagramSocket(DATABASE_PORT);
 
-		clientMap = new Hashtable<Integer, SocketAddress>();
+		clientMap = new ConcurrentHashMap<Integer, SocketAddress>();
 
 		gameDatabase = new GameDatabase();
-		idList = new ArrayList<Integer>();
-		idList.add(0);
-		idList.add(1);
+
+		idMapLock = new Object();
+		idMap = new ConcurrentHashMap<Integer, Boolean>();
+		idMap.put(0, false);
+		idMap.put(1, false);
 
 		Thread receiveThread = new Thread(new Runnable() {
 			@Override
@@ -44,6 +48,7 @@ public class Server{
 			}
 		});
 		sendThread.start();
+
  	}
 
  	private void startServer ()
@@ -52,15 +57,9 @@ public class Server{
  			Socket socket = null;
 			try {
  				socket = serverSocket.accept();
- 				System.out.println("Establish connection with " + socket.getInetAddress());
-
-				int newId = -1;
- 				synchronized(idList) {
- 					newId = idList.remove(0);
- 				}
 
  				// Start service for new client. 				
- 				ConnectionService connection = new ConnectionService(socket, this, newId);
+ 				ConnectionService connection = new ConnectionService(socket, this);
  				connection.start();
  			}
  			catch (IOException e) {
@@ -69,12 +68,26 @@ public class Server{
  		}
  	}
 
+ 	public int getId()
+ 	{
+ 		synchronized(idMapLock) {
+			for (ConcurrentHashMap.Entry<Integer, Boolean> entry : idMap.entrySet()) {
+				if (entry.getValue().equals(false)) {
+					int id = entry.getKey();
+					idMap.replace(id, true);
+					return id;
+				}
+	      }
+	   }
+ 		
+ 		return -1;
+ 	}
+
  	public void removeClient(int id)
  	{
- 		synchronized(idList) {
- 			idList.add(id);
- 		}
-
+ 		synchronized(idMapLock) {
+ 			idMap.replace(id, false);
+		}
  		clientMap.remove(id);
  		gameDatabase.remove(id);
  	}
@@ -101,8 +114,6 @@ public class Server{
 
 	public void send()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
-		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 		long lastTime = System.currentTimeMillis();
 		try {
 			while (true) {
@@ -121,7 +132,7 @@ public class Server{
 			 		e.printStackTrace();
 			 		continue;
 			 	}
-
+			 	
 				for (SocketAddress address : clientMap.values()) {
 					DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address);
 					gameDataSocket.send(packet);
@@ -133,6 +144,7 @@ public class Server{
 			e.printStackTrace();
 		}
 	}
+
 
 	public static void main(String args[]) {
 		Server server;

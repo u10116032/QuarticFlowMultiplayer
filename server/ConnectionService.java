@@ -12,25 +12,29 @@ public class ConnectionService extends Thread {
 	private BufferedReader reader;
 	private PrintWriter writer;
 
-	public ConnectionService (Socket socket, Server server, int id)
+	public ConnectionService (Socket socket, Server server) throws IOException
 	{
 		this.socket = socket;
+		socket.setSoTimeout(1000);
+		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		writer = new PrintWriter(socket.getOutputStream(), true);
+		
 		this.server = server;
-		this.id = id;
-
-		try {
-			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			writer = new PrintWriter(socket.getOutputStream(), true);
-		}
-		catch (IOException e) {
- 			e.printStackTrace();
- 		}
+		id = -1;
+		
+ 		QFLogger.INSTANCE.Log("Establish connection with " + socket.getInetAddress());
 	}
 
 	private void processRequest(String request)
 	{
-		// Close connection.
-		if (request.equals("CLOSE")) {
+		if (request.equals("ALIVE"))
+			return;
+		else if (request.equals("ISALIVE")){
+			sendMessage("ALIVE");
+			return;
+		}
+		else if (request.equals("CLOSE")) {
+			// Close connection.
 			try {
 				socket.shutdownInput();
 				socket.shutdownOutput();
@@ -40,8 +44,11 @@ public class ConnectionService extends Thread {
  			}
 		}
 		else if (request.equals("SETUP")) {
+			id = server.getId();
 			sendMessage("id:" + Integer.toString(id));
 		}
+
+		QFLogger.INSTANCE.Log("Received: " + request);
 	}
 
 	private void sendMessage(String message)
@@ -50,26 +57,39 @@ public class ConnectionService extends Thread {
 			return;
 		
 		writer.println(message);
-		System.out.println("Send: " + message);
+
+		if (message.equals("ALIVE") || message.equals("ISALIVE"))
+			return;
+
+		QFLogger.INSTANCE.Log("Send: " + message);
 	}
 
 	@Override
 	public void run()
 	{
+		boolean isAlive = true;
+
 		while (true) {
 			String request = null;
 			try {
 				request = reader.readLine();
-
+				
 				if (request == null)
 					break;
 
-				System.out.println("Received: " + request);
+				isAlive = true;
 				processRequest(request);
 			}
 			catch (IOException e) {
-				e.printStackTrace();
-				break;
+				// Keepalive.
+				if (isAlive) {
+					sendMessage("ISALIVE");
+					isAlive = false;
+				}
+				else {
+					QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
+					break;
+				}
 	 		}
 		}
 
@@ -87,6 +107,7 @@ public class ConnectionService extends Thread {
 		}
 		
 		server.removeClient(id);
- 		System.out.println("Disconnect " + socket.getInetAddress());
+ 		QFLogger.INSTANCE.Log("Disconnect " + socket.getInetAddress());
 	}
+
 }
