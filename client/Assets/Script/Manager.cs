@@ -20,12 +20,14 @@ public class Manager {
 
 	private Thread connectThread;
 	private bool connecting;
+	private System.Object connectingLock;
 
 	private UdpClient udpClient;
 
 	private Thread receiveThread;
 	private Thread sendThread;
 	private bool streaming;
+	private System.Object streamingLock;
 
 	private Dictionary <byte, ClientData> clientDataMap;
 	private ClientData clientData;
@@ -259,28 +261,28 @@ public class Manager {
 
 	private bool IsConnecting()
 	{
-		lock (connecting) {
+		lock (connectingLock) {
 			return connecting;
 		}
 	}
 
 	private void SetConnecting(bool connecting)
 	{
-		lock (this.connecting) {
+		lock (connectingLock) {
 			this.connecting = connecting;
 		}
 	}
 
 	private bool IsStreaming()
 	{
-		lock (streaming) {
+		lock (streamingLock) {
 			return streaming;
 		}
 	}
 
 	private void SetStreaming(bool streaming)
 	{
-		lock (this.streaming) {
+		lock (streamingLock) {
 			this.streaming = streaming;
 		}
 	}
