@@ -1,3 +1,5 @@
+import java.io.*;
+
 public class Transform {
 	private float positionX, positionY, positionZ;
 	private float quaternionX, quaternionY, quaternionZ, quaternionW;
@@ -48,6 +50,28 @@ public class Transform {
 	public float getQuaternionW()
 	{
 		return quaternionW;
+	}
+
+	public byte[] toByteArray() throws IOException
+	{
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		DataOutputStream dataWriter = new DataOutputStream(dataStream);
+
+		try{
+			dataWriter.writeFloat(positionX);
+			dataWriter.writeFloat(positionY);
+			dataWriter.writeFloat(positionZ);
+
+			dataWriter.writeFloat(quaternionX);
+			dataWriter.writeFloat(quaternionY);
+			dataWriter.writeFloat(quaternionZ);
+			dataWriter.writeFloat(quaternionW);
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+		
+		return dataStream.toByteArray();
 	}
 
 	@Override

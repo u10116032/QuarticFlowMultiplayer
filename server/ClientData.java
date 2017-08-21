@@ -1,60 +1,16 @@
 import java.io.*;
 
 public class ClientData {
+
 	private int id;
+	private boolean status;
 
-	private Transform head;
-	private Transform leftHand;
-	private Transform rightHand;
+	PlayerData playerData;
 
-	public ClientData(int id, Transform head, Transform leftHand, Transform rightHand)
+	public ClientData(int id)
 	{
 		this.id = id;
-		this.head = head;
-		this.leftHand = leftHand;
-		this.rightHand = rightHand;
-	}
-
-	public static ClientData parse(byte[] rawData) throws IOException {
-		ByteArrayInputStream rawDataStream = new ByteArrayInputStream(rawData);
-		DataInputStream dataStream = new DataInputStream(rawDataStream);
-
-		int id = dataStream.readByte();
-
-		float positionX = dataStream.readFloat();
-		float positionY = dataStream.readFloat();
-		float positionZ = dataStream.readFloat();
-
-		float quaternionX = dataStream.readFloat();
-		float quaternionY = dataStream.readFloat();
-		float quaternionZ = dataStream.readFloat();
-		float quaternionW = dataStream.readFloat();
-
-		Transform head = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
-
-		positionX = dataStream.readFloat();
-		positionY = dataStream.readFloat();
-		positionZ = dataStream.readFloat();
-
-		quaternionX = dataStream.readFloat();
-		quaternionY = dataStream.readFloat();
-		quaternionZ = dataStream.readFloat();
-		quaternionW = dataStream.readFloat();
-
-		Transform leftHand = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
-
-		positionX = dataStream.readFloat();
-		positionY = dataStream.readFloat();
-		positionZ = dataStream.readFloat();
-
-		quaternionX = dataStream.readFloat();
-		quaternionY = dataStream.readFloat();
-		quaternionZ = dataStream.readFloat();
-		quaternionW = dataStream.readFloat();
-
-		Transform rightHand = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
-
-		return new ClientData(id, head, leftHand, rightHand);
+		this.status = false;
 	}
 
 	public int getId()
@@ -62,29 +18,50 @@ public class ClientData {
 		return id;
 	}
 
-	public Transform getHead()
+	public void setStatus(boolean status)
 	{
-		return head;
+		this.status = status;
 	}
 
-	public Transform getLeftHand()
+	public boolean getStatus()
 	{
-		return leftHand;
+		return status;
 	}
 
-	public Transform getRightHand()
+	public void setPlayerData(PlayerData playerData)
 	{
-		return rightHand;
+		this.playerData = playerData;
+	}
+	
+	public PlayerData getPlayerData()
+	{
+		return playerData;
+	}
+
+	public byte[] toByteArray()
+	{
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		DataOutputStream dataWriter = new DataOutputStream(dataStream);
+
+		try{
+			dataWriter.writeInt(id);
+			dataWriter.write(playerData.toByteArray(), 0, playerData.toByteArray().length);
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+		
+		return dataStream.toByteArray();
 	}
 
 	@Override
 	public String toString()
 	{
 		String thisString = "id: " + id + 
-		",head: " + head.toString() + 
-		",leftHand: " + leftHand.toString() + 
-		",rightHand: " + rightHand.toString();
+		",status: " + status + 
+		",playerData: " + playerData.toString();
 
 		return thisString;
 	}
+
 }

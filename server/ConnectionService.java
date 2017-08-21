@@ -1,99 +1,93 @@
 import java.net.*;
 import java.lang.*;
 import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-public class ConnectionService extends Thread {
+// TODO: streaming
+
+public class ConnectionService {
 	private final int MAX_REQUEST_LENGTH = 16;
 
 	private int id;
-	private Server server;
+
 	private Socket socket;
 
 	private BufferedReader reader;
 	private PrintWriter writer;
 
-	public ConnectionService (Socket socket, Server server) throws IOException
+	private Object writerLock = new Object();
+
+	private Map<String, RequestHandler> requestMap;
+
+	public ConnectionService (Socket socket) throws IOException
 	{
 		this.socket = socket;
 		socket.setSoTimeout(1000);
 		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		writer = new PrintWriter(socket.getOutputStream(), true);
 		
-		this.server = server;
-		id = -1;
-		
- 		QFLogger.INSTANCE.Log("Establish connection with " + socket.getInetAddress());
+		requestMap = new ConcurrentHashMap<String, RequestHandler>();
+		requestMap.put("", new HeartBeatHandler(this));
+		requestMap.put("CLOSE", new CloseHandler(this));
+		requestMap.put("LOGIN", new LoginHandler(this));
+		requestMap.put("$", new StreamHandler(this));
+
+		this.id = -1;
+
+		Thread receiveThread = new Thread(new Runnable() {
+            public void run() { 
+                receiveTask();
+            } 
+        });
+        receiveThread.start();
+
+        QFLogger.INSTANCE.Log("Establish connection with " + socket.getInetAddress());
 	}
 
-	private void processRequest(String request)
+	private void receiveTask()
 	{
-		if (request.equals("ALIVE"))
-			return;
-		else if (request.equals("ISALIVE")){
-			sendMessage("ALIVE");
-			return;
-		}
-		else if (request.equals("CLOSE")) {
-			// Close connection.
-			try {
-				socket.shutdownInput();
-				socket.shutdownOutput();
-			}
-			catch (IOException e) {
- 				e.printStackTrace();
- 			}
-		}
-		else if (request.equals("SETUP")) {
-			id = server.getId();
-			sendMessage("id:" + Integer.toString(id));
-		}
-
-		QFLogger.INSTANCE.Log("Received: " + request);
-	}
-
-	private void sendMessage(String message)
-	{
-		if (writer == null)
-			return;
-		
-		writer.println(message);
-
-		if (message.equals("ALIVE") || message.equals("ISALIVE"))
-			return;
-
-		QFLogger.INSTANCE.Log("Send: " + message);
-	}
-
-	@Override
-	public void run()
-	{
-		boolean isAlive = true;
-
 		while (true) {
-			String request = null;
+
+			/**
+			 * [Packet Description]
+			 * Split with One Space
+			 * @param CommandType [ "", CLOSE, LOGIN, $ ]
+			 * @param Data        [ PlayerData in byte[] ]
+			 */
+			String receivePacket = null;
+
 			try {
-				request = reader.readLine();
+				receivePacket = reader.readLine();
 				
-				if (request == null)
+				if (receivePacket == null)
 					break;
 
-				isAlive = true;
-				processRequest(request);
+				String[] tokens = receivePacket.split(" ");
+
+				if (!requestMap.containsKey(tokens[0]) || tokens.length !=2){
+					sendMessage("$ILLEGAL");	
+					closeSocket();
+				}
+				else
+					requestMap.get(tokens[0]).execute(tokens[1]);
+
+				QFLogger.INSTANCE.Log("Received: " + receivePacket);
 			}
 			catch (IOException e) {
-				// Keepalive.
-				if (isAlive) {
-					sendMessage("ISALIVE");
-					isAlive = false;
-				}
-				else {
-					QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
-					break;
-				}
+				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
+				break;
 	 		}
 		}
 
 		try {
+
+			if (id != -1){
+				ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
+				clientData.setStatus(false);
+				GameDatabase.INSTANCE.updateClientData(id, clientData);
+			}
+
 			reader.close();
 		 	reader = null;
 
@@ -106,8 +100,43 @@ public class ConnectionService extends Thread {
 			e.printStackTrace();
 		}
 		
-		server.removeClient(id);
  		QFLogger.INSTANCE.Log("Disconnect " + socket.getInetAddress());
 	}
 
+	public void setId(int id)
+	{
+		this.id = id;
+	}
+
+	public int getId()
+	{
+		return this.id;
+	}
+
+	public void sendMessage(String message)
+	{
+		synchronized(writerLock)
+		{
+			if (writer == null)
+				return;
+			
+			writer.println(message);
+
+			QFLogger.INSTANCE.Log("Send: " + message);
+		}
+	}
+
+	public void closeSocket()
+	{
+		if (socket == null)
+			return;
+
+		try{
+			socket.shutdownInput();
+			socket.shutdownOutput();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+	}
 }

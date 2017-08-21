@@ -2,60 +2,88 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
 
-public class GameDatabase {
+public enum GameDatabase {
+	INSTANCE;
+
+	private byte gameState;
 	private Map<Integer, ClientData> clientDataMap;
 
-	public GameDatabase()
+	private Object databaseLock = new Object();
+
+	private static final String DATABASE_PATH = "./database.txt";
+
+	GameDatabase() 
 	{
+		gameState = (byte)0;
 		clientDataMap = new ConcurrentHashMap<Integer, ClientData>();	
-	}
 
-	public byte[] toByteArray() throws IOException
-	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
-		DataOutputStream dataWriter = new DataOutputStream(dataStream);
-		
-		for (ClientData clientData : clientDataMap.values()) {
-			dataWriter.writeByte(clientData.getId());	
-
-			Transform head = clientData.getHead();
-			dataWriter.writeFloat(head.getPositionX());
-			dataWriter.writeFloat(head.getPositionY());
-			dataWriter.writeFloat(head.getPositionZ());
-			dataWriter.writeFloat(head.getQuaternionX());
-			dataWriter.writeFloat(head.getQuaternionY());
-			dataWriter.writeFloat(head.getQuaternionZ());
-			dataWriter.writeFloat(head.getQuaternionW());
-
-			Transform leftHand = clientData.getLeftHand();
-			dataWriter.writeFloat(leftHand.getPositionX());
-			dataWriter.writeFloat(leftHand.getPositionY());
-			dataWriter.writeFloat(leftHand.getPositionZ());
-			dataWriter.writeFloat(leftHand.getQuaternionX());
-			dataWriter.writeFloat(leftHand.getQuaternionY());
-			dataWriter.writeFloat(leftHand.getQuaternionZ());
-			dataWriter.writeFloat(leftHand.getQuaternionW());
-
-			Transform rightHand = clientData.getRightHand();
-			dataWriter.writeFloat(rightHand.getPositionX());
-			dataWriter.writeFloat(rightHand.getPositionY());
-			dataWriter.writeFloat(rightHand.getPositionZ());
-			dataWriter.writeFloat(rightHand.getQuaternionX());
-			dataWriter.writeFloat(rightHand.getQuaternionY());
-			dataWriter.writeFloat(rightHand.getQuaternionZ());
-			dataWriter.writeFloat(rightHand.getQuaternionW());
+		try{
+			readDatabase(DATABASE_PATH);
 		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+
+	private void readDatabase(String databasePath) throws IOException
+	{
+		BufferedReader fileReader = new BufferedReader(new FileReader(databasePath));
 		
-		return dataStream.toByteArray();
+		try {
+		    String line = fileReader.readLine();
+
+		    while (line != null) {
+		        line = fileReader.readLine();
+
+		        ClientData clientData = new ClientData(Integer.parseInt(line));
+		        clientDataMap.put(clientData.getId(), clientData);
+		    }
+		} 
+		finally {
+		    fileReader.close();
+		}
 	}
 
-	public void put(int id, ClientData clientData)
+	public byte[] toByteArray(int selfId)
 	{
-		clientDataMap.put(id, clientData);
+		synchronized(databaseLock)
+		{
+			ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+			DataOutputStream dataWriter = new DataOutputStream(dataStream);
+			
+			try{
+				for (ClientData clientData : clientDataMap.values()) {
+					if (clientData.getId() != selfId)
+						dataWriter.write(clientData.toByteArray());
+				}
+			}
+			catch(IOException e){
+				e.printStackTrace();
+			}
+			
+			return dataStream.toByteArray();
+		}
 	}
 
-	public void remove(int id)
+	public void updateClientData(int id, ClientData clientData)
 	{
-		clientDataMap.remove(id);
+		synchronized(databaseLock)
+		{
+			if(!clientDataMap.containsKey(id))
+				return;
+
+			clientDataMap.put(id, clientData);
+		}
+	}
+
+	public ClientData getClientData(int id)
+	{
+		synchronized(databaseLock)
+		{
+			if(!clientDataMap.containsKey(id))
+				return null;
+
+			return clientDataMap.get(id);
+		}
 	}
 }
