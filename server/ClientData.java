@@ -3,14 +3,28 @@ import java.io.*;
 public class ClientData {
 
 	private int id;
-	private boolean status;
+	private boolean online;
 
-	PlayerData playerData;
+	private PlayerData playerData;
+
+	private ConnectionService service;
 
 	public ClientData(int id)
 	{
 		this.id = id;
-		this.status = false;
+		this.online = false;
+
+		this.service = null;
+	}
+
+	public void setService(ConnectionService service)
+	{
+		this.service = service;
+	}
+
+	public ConnectionService getService()
+	{
+		return this.service;
 	}
 
 	public int getId()
@@ -18,14 +32,14 @@ public class ClientData {
 		return id;
 	}
 
-	public void setStatus(boolean status)
+	public void setOnline(boolean online)
 	{
-		this.status = status;
+		this.online = online;
 	}
 
-	public boolean getStatus()
+	public boolean isOnline()
 	{
-		return status;
+		return online;
 	}
 
 	public void setPlayerData(PlayerData playerData)
@@ -58,7 +72,7 @@ public class ClientData {
 	public String toString()
 	{
 		String thisString = "id: " + id + 
-		",status: " + status + 
+		",online: " + online + 
 		",playerData: " + playerData.toString();
 
 		return thisString;

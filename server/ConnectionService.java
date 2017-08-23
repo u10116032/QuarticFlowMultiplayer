@@ -7,8 +7,6 @@ import java.util.concurrent.*;
 // TODO: streaming
 
 public class ConnectionService {
-	private final int MAX_REQUEST_LENGTH = 16;
-
 	private int id;
 
 	private Socket socket;
@@ -16,9 +14,12 @@ public class ConnectionService {
 	private BufferedReader reader;
 	private PrintWriter writer;
 
+	// TODO: check if thread safe
 	private Object writerLock = new Object();
 
-	private Map<String, RequestHandler> requestMap;
+	private Map<String, RequestHandler> requestHandlerMap;
+
+	private Thread receiveThread;
 
 	public ConnectionService (Socket socket) throws IOException
 	{
@@ -27,15 +28,15 @@ public class ConnectionService {
 		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		writer = new PrintWriter(socket.getOutputStream(), true);
 		
-		requestMap = new ConcurrentHashMap<String, RequestHandler>();
-		requestMap.put("", new HeartBeatHandler(this));
-		requestMap.put("CLOSE", new CloseHandler(this));
-		requestMap.put("LOGIN", new LoginHandler(this));
-		requestMap.put("$", new StreamHandler(this));
+		requestHandlerMap = new ConcurrentHashMap<String, RequestHandler>();
+		requestHandlerMap.put("", new HeartBeatHandler(this));
+		requestHandlerMap.put("CLOSE", new CloseHandler(this));
+		requestHandlerMap.put("LOGIN", new LoginHandler(this));
+		requestHandlerMap.put("$", new StreamDataHandler(this));
 
 		this.id = -1;
 
-		Thread receiveThread = new Thread(new Runnable() {
+		receiveThread = new Thread(new Runnable() {
             public void run() { 
                 receiveTask();
             } 
@@ -65,12 +66,10 @@ public class ConnectionService {
 
 				String[] tokens = receivePacket.split(" ");
 
-				if (!requestMap.containsKey(tokens[0]) || tokens.length !=2){
-					sendMessage("$ILLEGAL");	
-					closeSocket();
-				}
+				if (!requestHandlerMap.containsKey(tokens[0]))
+					closeService();
 				else
-					requestMap.get(tokens[0]).execute(tokens[1]);
+					requestHandlerMap.get(tokens[0]).execute(tokens[1 % tokens.length]);
 
 				QFLogger.INSTANCE.Log("Received: " + receivePacket);
 			}
@@ -82,9 +81,10 @@ public class ConnectionService {
 
 		try {
 
-			if (id != -1){
-				ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
-				clientData.setStatus(false);
+			ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
+			if (clientData != null){
+				clientData.setOnline(false);
+				clientData.setService(null);
 				GameDatabase.INSTANCE.updateClientData(id, clientData);
 			}
 
@@ -126,7 +126,7 @@ public class ConnectionService {
 		}
 	}
 
-	public void closeSocket()
+	public void closeService()
 	{
 		if (socket == null)
 			return;
@@ -136,6 +136,19 @@ public class ConnectionService {
 			socket.shutdownOutput();
 		}
 		catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+
+	public void stop()
+	{
+		if(receiveThread == null)
+			return;
+
+		try{
+			receiveThread.join();
+		}
+		catch(InterruptedException e){
 			e.printStackTrace();
 		}
 	}

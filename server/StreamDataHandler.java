@@ -1,25 +1,25 @@
 import java.io.*;
 import java.nio.charset.Charset;
 
-public class StreamHandler extends RequestHandler{
-	public StreamHandler(ConnectionService service)
+public class StreamDataHandler extends RequestHandler{
+	public StreamDataHandler(ConnectionService service)
 	{
 		super(service);
 	}
 
 	public void execute(String token)
 	{
-		// TODO: check status
+		// TODO: check isOnline
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(service.getId());
 
 		if (clientData == null){
-			service.sendMessage("$ILLEGAL");
-			service.closeSocket();
+			service.closeService();
+			return;
 		}
 
-		if (!clientData.getStatus()){
-			service.sendMessage("$ILLEGAL");
-			service.closeSocket();
+		if (!clientData.isOnline()){
+			service.closeService();
+			return;
 		}
 
 		try{

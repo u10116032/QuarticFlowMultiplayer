@@ -8,8 +8,6 @@ public enum GameDatabase {
 	private byte gameState;
 	private Map<Integer, ClientData> clientDataMap;
 
-	private Object databaseLock = new Object();
-
 	private static final String DATABASE_PATH = "./database.txt";
 
 	GameDatabase() 
@@ -46,44 +44,37 @@ public enum GameDatabase {
 
 	public byte[] toByteArray(int selfId)
 	{
-		synchronized(databaseLock)
-		{
-			ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
-			DataOutputStream dataWriter = new DataOutputStream(dataStream);
-			
-			try{
-				for (ClientData clientData : clientDataMap.values()) {
-					if (clientData.getId() != selfId)
-						dataWriter.write(clientData.toByteArray());
-				}
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		DataOutputStream dataWriter = new DataOutputStream(dataStream);
+		
+		try{
+			for (ClientData clientData : clientDataMap.values()) {
+				if (clientData.getId() != selfId)
+					dataWriter.write(clientData.toByteArray());
 			}
-			catch(IOException e){
-				e.printStackTrace();
-			}
-			
-			return dataStream.toByteArray();
 		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
+		
+		return dataStream.toByteArray();
 	}
 
 	public void updateClientData(int id, ClientData clientData)
 	{
-		synchronized(databaseLock)
-		{
-			if(!clientDataMap.containsKey(id))
-				return;
+		if(!clientDataMap.containsKey(id))
+			return;
 
-			clientDataMap.put(id, clientData);
-		}
+		clientDataMap.put(id, clientData);	
 	}
 
 	public ClientData getClientData(int id)
 	{
-		synchronized(databaseLock)
-		{
-			if(!clientDataMap.containsKey(id))
-				return null;
+		
+		if(!clientDataMap.containsKey(id))
+			return null;
 
-			return clientDataMap.get(id);
-		}
+		return clientDataMap.get(id);
+		
 	}
 }

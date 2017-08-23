@@ -52,7 +52,7 @@ public class Transform {
 		return quaternionW;
 	}
 
-	public byte[] toByteArray() throws IOException
+	public byte[] toByteArray() 
 	{
 		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);

@@ -8,9 +8,6 @@ public class Server{
 	private final int SERVER_PORT = 40000;
 	private ServerSocket serverSocket;
 
-	private Map<Integer, Boolean> idMap;
-	private Object idMapLock;
-
  	private Server() throws Exception
  	{
 		serverSocket = new ServerSocket(SERVER_PORT);
