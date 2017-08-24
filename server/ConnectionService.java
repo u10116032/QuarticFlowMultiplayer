@@ -15,7 +15,7 @@ public class ConnectionService {
 	private PrintWriter writer;
 
 	// TODO: check if thread safe
-	private Object writerLock = new Object();
+	private Object streamLock = new Object();
 
 	private Map<String, RequestHandler> requestHandlerMap;
 
@@ -60,7 +60,7 @@ public class ConnectionService {
 
 			try {
 				receivePacket = reader.readLine();
-				
+				QFLogger.INSTANCE.Log("Received: " + receivePacket);
 				if (receivePacket == null)
 					break;
 
@@ -71,7 +71,7 @@ public class ConnectionService {
 				else
 					requestHandlerMap.get(tokens[0]).execute(tokens[1 % tokens.length]);
 
-				QFLogger.INSTANCE.Log("Received: " + receivePacket);
+				
 			}
 			catch (IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
@@ -80,7 +80,6 @@ public class ConnectionService {
 		}
 
 		try {
-
 			ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
 			if (clientData != null){
 				clientData.setOnline(false);
@@ -88,13 +87,15 @@ public class ConnectionService {
 				GameDatabase.INSTANCE.updateClientData(id, clientData);
 			}
 
-			reader.close();
-		 	reader = null;
+			synchronized(streamLock) {
+				reader.close();
+			 	reader = null;
 
-		 	writer.close();
-			writer = null;
+			 	writer.close();
+				writer = null;
 
-			socket.close();
+				socket.close();
+			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -115,8 +116,7 @@ public class ConnectionService {
 
 	public void sendMessage(String message)
 	{
-		synchronized(writerLock)
-		{
+		synchronized(streamLock) {
 			if (writer == null)
 				return;
 			

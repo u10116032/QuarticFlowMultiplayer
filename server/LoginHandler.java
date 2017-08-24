@@ -10,7 +10,15 @@ public class LoginHandler extends RequestHandler{
 
 	public void execute(String token)
 	{
-		int id = Integer.parseInt(token);
+		int id = -1;
+		try {
+			id = Integer.parseInt(token);
+		}
+		catch(NumberFormatException e) {
+			QFLogger.INSTANCE.Log("Ilegal account.");
+			service.closeService();
+			return;
+		}
 
 		service.setId(id);
 
@@ -36,25 +44,29 @@ public class LoginHandler extends RequestHandler{
 		}
 
 		clientData.setOnline(true);
+		clientData.setService(service);
 		GameDatabase.INSTANCE.updateClientData(id, clientData);
 
 		service.sendMessage("SUCCESS");
 
 		Thread sendThread = new Thread(new Runnable() {
             public void run() { 
-                sendTask(id);
+                sendTask();
             } 
         });
         sendThread.start();
 
-        QFLogger.INSTANCE.Log("id: " + id + "Login");
+        QFLogger.INSTANCE.Log("id: " + id + " Login");
 	}
 
-	private void sendTask(int id)
+	private void sendTask()
 	{
+		int id = service.getId();
+
 		while(GameDatabase.INSTANCE.getClientData(id).isOnline()){
 			try{
-				service.sendMessage(new String(GameDatabase.INSTANCE.toByteArray(id), "UTF-8"));
+				// May send after setOnline(false), but it doesn't matter
+				service.sendMessage("$ "+ new String(GameDatabase.INSTANCE.toByteArray(id), "UTF-8"));
 			}
 			catch(IOException e){
 				e.printStackTrace();

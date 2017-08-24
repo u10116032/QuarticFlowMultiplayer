@@ -15,6 +15,8 @@ public class Server{
 
  	private void startServer ()
  	{
+ 		QFLogger.INSTANCE.Log("Server is starting...");
+
  		while (true) {
  			Socket socket = null;
 			try {

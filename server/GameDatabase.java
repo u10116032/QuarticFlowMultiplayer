@@ -30,9 +30,11 @@ public enum GameDatabase {
 		try {
 		    String line = fileReader.readLine();
 
-		    while (line != null) {
+		    while (true) {
 		        line = fileReader.readLine();
 
+		        if (line == null)
+		        	break;
 		        ClientData clientData = new ClientData(Integer.parseInt(line));
 		        clientDataMap.put(clientData.getId(), clientData);
 		    }
@@ -49,7 +51,7 @@ public enum GameDatabase {
 		
 		try{
 			for (ClientData clientData : clientDataMap.values()) {
-				if (clientData.getId() != selfId)
+				if (clientData.getId() != selfId && clientData.isOnline())
 					dataWriter.write(clientData.toByteArray());
 			}
 		}

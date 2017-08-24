@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Optional;
 
 public class PlayerData{
 
@@ -17,36 +18,36 @@ public class PlayerData{
 		ByteArrayInputStream rawDataStream = new ByteArrayInputStream(rawData);
 		DataInputStream dataStream = new DataInputStream(rawDataStream);
 
-		float positionX = dataStream.readFloat();
-		float positionY = dataStream.readFloat();
-		float positionZ = dataStream.readFloat();
+		float positionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		float positionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		float positionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
-		float quaternionX = dataStream.readFloat();
-		float quaternionY = dataStream.readFloat();
-		float quaternionZ = dataStream.readFloat();
-		float quaternionW = dataStream.readFloat();
+		float quaternionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		float quaternionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		float quaternionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		float quaternionW = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
 		Transform head = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
 
-		positionX = dataStream.readFloat();
-		positionY = dataStream.readFloat();
-		positionZ = dataStream.readFloat();
+		positionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		positionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		positionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
-		quaternionX = dataStream.readFloat();
-		quaternionY = dataStream.readFloat();
-		quaternionZ = dataStream.readFloat();
-		quaternionW = dataStream.readFloat();
+		quaternionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionW = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
 		Transform leftHand = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
 
-		positionX = dataStream.readFloat();
-		positionY = dataStream.readFloat();
-		positionZ = dataStream.readFloat();
+		positionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		positionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		positionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
-		quaternionX = dataStream.readFloat();
-		quaternionY = dataStream.readFloat();
-		quaternionZ = dataStream.readFloat();
-		quaternionW = dataStream.readFloat();
+		quaternionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
+		quaternionW = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
 		Transform rightHand = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
 
