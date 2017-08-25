@@ -7,5 +7,5 @@ public abstract class RequestHandler{
 		this.service = service;
 	}
 
-	public abstract void execute(String token);
+	public abstract void execute(byte[] tokenByte);
 }

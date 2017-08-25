@@ -28,7 +28,6 @@ public class PlayerData{
 		float quaternionW = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 
 		Transform head = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
-
 		positionX = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 		positionY = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 		positionZ = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);

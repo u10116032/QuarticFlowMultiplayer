@@ -5,7 +5,7 @@ public class HeartBeatHandler extends RequestHandler{
 		super(service);
 	}
 
-	public void execute(String token)
+	public void execute(byte[] tokenByte)
 	{
 		return;
 	}

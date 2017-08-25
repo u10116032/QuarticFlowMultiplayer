@@ -7,7 +7,7 @@ public class StreamDataHandler extends RequestHandler{
 		super(service);
 	}
 
-	public void execute(String token)
+	public void execute(byte[] tokenByte)
 	{
 		// TODO: check isOnline
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(service.getId());
@@ -23,7 +23,7 @@ public class StreamDataHandler extends RequestHandler{
 		}
 
 		try{
-			clientData.setPlayerData(PlayerData.parse(token.getBytes(Charset.forName("UTF-8"))));
+			clientData.setPlayerData(PlayerData.parse(tokenByte));
 		}
 		catch(IOException e){
 			e.printStackTrace();

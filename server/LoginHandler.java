@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.*;
 
 public class LoginHandler extends RequestHandler{
 
@@ -8,13 +9,13 @@ public class LoginHandler extends RequestHandler{
 		super(service);
 	}
 
-	public void execute(String token)
+	public void execute(byte[] tokenByte)
 	{
 		int id = -1;
 		try {
-			id = Integer.parseInt(token);
+			id = ByteBuffer.wrap(tokenByte).getInt();
 		}
-		catch(NumberFormatException e) {
+		catch(Exception e) {
 			QFLogger.INSTANCE.Log("Ilegal account.");
 			service.closeService();
 			return;

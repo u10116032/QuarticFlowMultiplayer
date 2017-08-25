@@ -59,7 +59,8 @@ public class ClientData {
 
 		try{
 			dataWriter.writeInt(id);
-			dataWriter.write(playerData.toByteArray(), 0, playerData.toByteArray().length);
+			byte[] playerDataBytes = playerData.toByteArray();
+			dataWriter.write(playerDataBytes, 0, playerDataBytes.length);
 		}
 		catch(IOException e){
 			e.printStackTrace();

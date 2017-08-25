@@ -11,8 +11,8 @@ public class ConnectionService {
 
 	private Socket socket;
 
-	private BufferedReader reader;
-	private PrintWriter writer;
+	private DataInputStream reader;
+	private DataOutputStream writer;
 
 	// TODO: check if thread safe
 	private Object streamLock = new Object();
@@ -25,8 +25,9 @@ public class ConnectionService {
 	{
 		this.socket = socket;
 		socket.setSoTimeout(1000);
-		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		writer = new PrintWriter(socket.getOutputStream(), true);
+
+		reader = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+		writer = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 		
 		requestHandlerMap = new ConcurrentHashMap<String, RequestHandler>();
 		requestHandlerMap.put("", new HeartBeatHandler(this));
@@ -45,38 +46,29 @@ public class ConnectionService {
 
         QFLogger.INSTANCE.Log("Establish connection with " + socket.getInetAddress());
 	}
-
+	/**
+	* [Packet Description]
+	* Split with One Space
+	* @param CommandType [ "", CLOSE, LOGIN, $ ]
+	* @param Data        [ PlayerData in byte[] ]
+	*/	
 	private void receiveTask()
 	{
 		while (true) {
+			try{
+				byte[] requestBytes = readRequestLine();
+				List<byte[]> tokenList = splitRequestLine(requestBytes);
 
-			/**
-			 * [Packet Description]
-			 * Split with One Space
-			 * @param CommandType [ "", CLOSE, LOGIN, $ ]
-			 * @param Data        [ PlayerData in byte[] ]
-			 */
-			String receivePacket = null;
-
-			try {
-				receivePacket = reader.readLine();
-				QFLogger.INSTANCE.Log("Received: " + receivePacket);
-				if (receivePacket == null)
-					break;
-
-				String[] tokens = receivePacket.split(" ");
-
-				if (!requestHandlerMap.containsKey(tokens[0]))
+				String requestType = new String(tokenList.get(0), "UTF-8");
+				if (!requestHandlerMap.containsKey(requestType))
 					closeService();
 				else
-					requestHandlerMap.get(tokens[0]).execute(tokens[1 % tokens.length]);
-
-				
+					requestHandlerMap.get(requestType).execute(tokenList.get(1 % tokenList.size()));
 			}
-			catch (IOException e) {
+			catch(IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
 				break;
-	 		}
+			}
 		}
 
 		try {
@@ -104,6 +96,40 @@ public class ConnectionService {
  		QFLogger.INSTANCE.Log("Disconnect " + socket.getInetAddress());
 	}
 
+	private byte[] readRequestLine() throws IOException
+	{
+		byte[] buffer = new byte[128];
+		int bufferCount = 0;
+		byte receivedByte;
+		while (true) {
+			receivedByte = reader.readByte();
+			if (receivedByte == '\r') {
+				receivedByte = reader.readByte();
+				if(receivedByte == '\n')
+					return Arrays.copyOf(buffer, bufferCount);
+			}
+			buffer[bufferCount++] = receivedByte;
+		}
+	}
+
+	private List<byte[]> splitRequestLine(byte[] requestBytes)
+	{
+		List<byte[]> tokenList = new ArrayList<byte[]>();
+
+		int delimIndex = -1;
+		for (int i = 0; i < requestBytes.length; ++i) {
+			if (requestBytes[i] == ' ') {
+				delimIndex = i;
+				break;
+			}
+		}
+
+		tokenList.add(Arrays.copyOf(requestBytes, delimIndex - 1));
+		tokenList.add(Arrays.copyOfRange(requestBytes, delimIndex + 1, requestBytes.length));
+
+		return tokenList;
+	}
+
 	public void setId(int id)
 	{
 		this.id = id;
@@ -120,7 +146,12 @@ public class ConnectionService {
 			if (writer == null)
 				return;
 			
-			writer.println(message);
+			try{
+				writer.write(message.getBytes());
+			}
+			catch(IOException e){
+			
+			}
 
 			QFLogger.INSTANCE.Log("Send: " + message);
 		}
