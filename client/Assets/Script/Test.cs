@@ -11,15 +11,17 @@ public class Test : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		manager = new Manager ();
-		manager.SetListener (GameObject.Find ("RemotePlayer").GetComponent<RemotePlayerController> ());
+		manager = new Manager (GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>());
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKey (KeyCode.A))
-			manager.StartConnection ();
-		if (Input.GetKey (KeyCode.S))
+		if (Input.GetKeyDown(KeyCode.A)) {
+            manager.StartConnection();
+            Debug.Log("a is pressed");
+        }
+			
+		if (Input.GetKeyDown(KeyCode.S))
 			manager.StopConnection ();
 
 		manager.UpdateClientData (head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);

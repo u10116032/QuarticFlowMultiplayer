@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Net;
@@ -9,283 +9,255 @@ using System.IO;
 using System.Collections.Generic;
 
 public class Manager {
-	private string remoteIP = "140.112.31.113";
+	private const string remoteIP = "127.0.0.1";
 	private int serverPort = 40000;
-	private int databasePort = 41000;
-	private IPEndPoint remoteEndPoint;
 
 	private TcpClient tcpClient;
-	private StreamReader reader;
-	private StreamWriter writer;
+    private Stream stream;
 
-	private Thread connectThread;
-	private bool connecting;
-	private System.Object connectingLock;
+    private Thread sendThread;
+    private Thread receiveThread;
 
-	private UdpClient udpClient;
+    private bool running;
+    private System.Object runningLock;
 
-	private Thread receiveThread;
-	private Thread sendThread;
-	private bool streaming;
-	private System.Object streamingLock;
+    private Queue<byte[]> requestQueue;
+    private System.Object requestQueueLock;
 
-	private Dictionary <byte, ClientData> clientDataMap;
-	private ClientData clientData;
+    private Dictionary<String, ResponseHandler> requestMap;
 
-	public Listener listener;
+    private ClientData clientData;
 
-	public Manager ()
+	public Manager (Listener listener)
 	{
-		remoteIP = "140.112.31.113";
+        clientData = new ClientData();
 
-		clientData = new ClientData ();
-		clientDataMap = new Dictionary<byte, ClientData> ();
-		remoteEndPoint = new IPEndPoint (IPAddress.Parse (remoteIP), databasePort);
+        requestQueue = new Queue<byte[]>();
 
-		connectThread = null;
-		connectingLock = new System.Object();
-		SetConnecting(false);
+        requestMap = new Dictionary<String, ResponseHandler>();
+        requestMap["SUCCESS"] = new SuccessHandler(this);
+        requestMap["$"] = new StreamDataHandler(this, listener);
 
-		receiveThread = null;
-		sendThread = null;
-		streamingLock = new System.Object();
-		SetStreaming(false);
+        requestQueueLock = new System.Object();
+        runningLock = new System.Object();
+
+        running = true;
+
+        sendThread = new Thread(Send);
+        receiveThread = new Thread(Receive);
+
+        InitialConnect();
+        sendThread.Start();
+        receiveThread.Start();
 	}
 
-	public void SetListener(Listener listener)
+	public void StartConnection()
 	{
-		this.listener = listener;
-	}
+        requestQueue.Enqueue(Encoding.UTF8.GetBytes("LOGIN 3"));
+    }
 
-	public bool StartConnection ()
+    public void StopConnection()
 	{
-		if (!IsConnecting()) {
-			if (connectThread != null) {
-				connectThread.Join ();
-				connectThread = null;
-			}
+        SetRunning(false);
+        requestQueue.Enqueue(Encoding.UTF8.GetBytes("CLOSE"));
 
-			connectThread = new Thread(Connect);
-			connectThread.Start();
-			SetConnecting(true);
+        if (tcpClient != null)
+        {
+            tcpClient.Close();
+            tcpClient = null;
+        }
 
-			return true;
-		}
-
-		return false;
-	}
-
-	public bool StopConnection ()
-	{
-		if (IsConnecting()) {
-			SendRequest("CLOSE");
-			SetConnecting(false);
-
-			return true;
-		}
-
-		return false;
-	}
-
-	private void StartStream()
-	{
-		if (!IsStreaming()) {
-			if (receiveThread != null) {
-				receiveThread.Join ();
-				receiveThread = null;
-			}
-
-			if (sendThread != null) {
-				sendThread.Join ();
-				sendThread = null;
-			}
-
-			udpClient = new UdpClient(databasePort);
-
-			receiveThread = new Thread(Receive);
-			sendThread = new Thread(Send);
-
-			receiveThread.Start();
-			sendThread.Start();
-
-			SetStreaming(true);
-		}
-	}
-
-	private void StopStream()
-	{
-		if (IsStreaming()) {
-			udpClient.Close ();
-			SetStreaming(false);
-		}
-	}
-
-	private void SendRequest(string request) {
-		try {
-			writer.WriteLine(request);
-			writer.Flush();
-		}
-		catch (Exception e) {
-			Debug.Log(e.ToString());
-		}
-	}
-
-	private void ProcessMessage(String message)
-	{
-		if (message == "ALIVE")
-			return;
-		else if (message == "ISALIVE") {
-			SendRequest ("ALIVE");
-			return;
-		}
-
-		Regex regex = new Regex (":");
-		string[] tokens = regex.Split (message);
-		if (tokens [0] == "id") {
-			clientData.id = byte.Parse (tokens [1]);
-			StartStream ();
-		}
-			
-		Debug.Log (message);	
-	}
+        Debug.Log("Disconnected.");
+    }
 		
-	private void Connect () {
+	private void InitialConnect () {
 		Debug.Log("Attempt connection with server...");
 
-		//while (isConnecting) {
 		try {
 			tcpClient = new TcpClient(remoteIP, serverPort);
 		
 			Debug.Log("Connected to server.");
-
-			NetworkStream stream = tcpClient.GetStream();
-			stream.ReadTimeout = 1000;
-			reader = new StreamReader(tcpClient.GetStream());
-			writer = new StreamWriter(tcpClient.GetStream());
-
-			SendRequest ("SETUP");
-
-			bool isAlive = true;
-			while (IsConnecting()) {
-				try {
-					string message = reader.ReadLine();
-					if (message == null)
-						break;
-					isAlive = true;
-					ProcessMessage(message);
-				}
-				catch (IOException e) {
-					if (isAlive) {
-						Debug.Log("Keepalive");
-						SendRequest("ISALIVE");
-						isAlive = false;
-					}
-					else {
-						Debug.Log("No response from server.");
-						break;
-					}
-				}
-			}
-		}
-		catch (SocketException e) {
-			// Connect fail.
+            
+            stream = tcpClient.GetStream();
+        }
+        catch (SocketException e) {
+            // Connect fail.
+            SetRunning(false);
 			Debug.Log("SocketException: " + e.ErrorCode);
 		}
-
-
-		StopStream ();
-
-		if (tcpClient != null) {
-			tcpClient.Close();
-			tcpClient = null;
-		}
-
-		SetConnecting(false);
-		Debug.Log("Disconnected.");
 	}
 
-	private void Receive()
+    private void Send()
+    {
+        Debug.Log("Sending stream data...");
+
+        DateTime lastTime = DateTime.Now;
+        while (IsRunning())
+        {
+            DateTime currentTime = DateTime.Now;
+
+            byte[] request = GetRequest();
+            if (request != null) {
+                SendRequest(request);
+                lastTime = currentTime;
+            }
+
+            if (currentTime.Subtract(lastTime).TotalMilliseconds > 250.0f)
+            {
+                SendRequest(new byte[1] { 0 });
+                lastTime = currentTime;
+            }
+        }
+    }
+
+    private void Receive()
 	{
 		Debug.Log("Receiving stream data...");
 
-		try {
-			while (IsStreaming()) {
-				IPEndPoint receiveEndPoint = new IPEndPoint(IPAddress.Any, 0);
-				Byte[] receiveBytes = udpClient.Receive(ref receiveEndPoint);
+        while (IsRunning())
+        {
+            try {
+                byte[] requestBytes = ReceiveResponse();
+
+                List<byte[]> tokenList = SplitResponseLine(requestBytes);
+
+                string requestType = Encoding.UTF8.GetString(tokenList[0]);
+                Debug.Log("receive response type: " + requestType);
+
+                if (requestMap.ContainsKey(requestType))
+                    requestMap[requestType].execute(tokenList[1 % tokenList.Count]);
+            }
+            catch (IOException e) {
+                break;
+            }
+        }
+    }
+
+    private List<byte[]> SplitResponseLine(byte[] requestBytes)
+    {
+        List<byte[]> tokenList = new List<byte[]>();
+
+        int delimIndex = 0;
+        for (int i = 0; i < requestBytes.Length; ++i)
+        {
+            if (requestBytes[i] == ' ')
+            {
+                byte[] token = new byte[i - delimIndex];
+                Array.Copy(requestBytes, delimIndex, token, 0, token.Length);
+                tokenList.Add(token);
+                delimIndex = i + 1;
+                break;
+            }
+        }
+
+        if (delimIndex != requestBytes.Length) {
+            byte[] token = new byte[requestBytes.Length - delimIndex];
+            Array.Copy(requestBytes, delimIndex, token, 0, token.Length);
+            tokenList.Add(token);
+        }
+        return tokenList;
+    }
+
+    private void SendRequest(byte[] requestByte)
+    {     
+        try {
+            byte[] package = new byte[requestByte.Length + 2];
+
+            Array.Copy(requestByte, package, requestByte.Length);
+            package[package.Length - 2] = Convert.ToByte('\r');
+            package[package.Length - 1] = Convert.ToByte('\n');
+
+            stream.Write(package, 0, package.Length);
+            //stream.Flush();
+            Debug.Log("Send: " + Encoding.UTF8.GetString(requestByte));
+        }
+        catch (Exception e) {
+            Debug.Log(e.ToString());
+        }
+    }
+
+    private byte[] ReceiveResponse() 
+    {
+        byte[] buffer = new byte[128];
+        int bufferCount = 0;
+        byte receivedByte;
+        try
+        {
+            for (int i = 0; i < buffer.Length; ++i)
+            {
+                receivedByte = (byte)stream.ReadByte();
+                if (receivedByte == '\r')
+                {
+                    receivedByte = (byte)stream.ReadByte();
+                    if (receivedByte == '\n')
+                    {
+                        byte[] requestBytes = new byte[bufferCount];
+                        Array.Copy(buffer, requestBytes, bufferCount);
+
+                        return requestBytes;
+                    }
+                }
+                buffer[bufferCount++] = receivedByte;
+            }
+
+            return null;
+        }
+        catch (IOException e) {
+            throw e;
+        }
+    }
+
+    public void AddRequest(byte[] request)
+    {
+        lock (requestQueueLock) {
+            requestQueue.Enqueue(request);
+        }
+    }
+
+    private byte[] GetRequest()
+    {
+        lock (requestQueueLock) {
+            if (requestQueue.Count == 0)
+                return null;
+            try {
                 
-				List<ClientData> clientDataList = ClientData.Parse(receiveBytes);
-				foreach(ClientData data in clientDataList) {
-					if (data.id != clientData.id)
-						clientDataMap[data.id] = data;
-				}
-				
-				listener.OnDataUpdated(clientDataMap, clientData.id);
-			}
-		}
-		catch (Exception e) {
-			Debug.Log(e.ToString());
-		}
+                return requestQueue.Dequeue();
+            }
+            catch (Exception e) {
+                Debug.Log("Exception: " + e.StackTrace);
+                return null;
+            }
+        }
+    }
 
-		SetStreaming(false);
-	}
+    public void SetRunning(bool running)
+    {
+        lock (runningLock) {
+            this.running = running;
+        }
+    }
 
-	private void Send()
-	{
-		Debug.Log("Sending stream data...");
-		try {
-			DateTime lastTime = DateTime.Now;
-			while (IsStreaming()){
-				DateTime currentTime = DateTime.Now;
-				if(currentTime.Subtract(lastTime).TotalMilliseconds < 20)
-					continue;
-				lastTime = currentTime;
+    public bool IsRunning()
+    {
+        lock (runningLock) {
+            return running;
+        }
+    }
 
-				byte[] packet = clientData.ToByteArray();
-				udpClient.Send(packet, packet.Length, remoteEndPoint);
-			}
-		}
-		catch (Exception e) {
-			Debug.Log(e.StackTrace);
-		}
+    public void UpdateClientData(Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
+    {
+        clientData.headPosition = headPosition;
+        clientData.headPose = headPose;
+        clientData.leftHandPosition = leftHandPosition;
+        clientData.leftHandPose = leftHandPose;
+        clientData.rightHandPosition = rightHandPosition;
+        clientData.rightHandPose = rightHandPose;
+    }
 
-		SetStreaming(false);
-	}
+    public ClientData GetClientData()
+    {
+        return this.clientData;
+    }
 
-	public void UpdateClientData(Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
-	{
-		clientData.headPosition = headPosition;
-		clientData.headPose = headPose;
-		clientData.leftHandPosition = leftHandPosition;
-		clientData.leftHandPose = leftHandPose;
-		clientData.rightHandPosition = rightHandPosition;
-		clientData.rightHandPose = rightHandPose;
-	}
 
-	private bool IsConnecting()
-	{
-		lock (connectingLock) {
-			return connecting;
-		}
-	}
-
-	private void SetConnecting(bool connecting)
-	{
-		lock (connectingLock) {
-			this.connecting = connecting;
-		}
-	}
-
-	private bool IsStreaming()
-	{
-		lock (streamingLock) {
-			return streaming;
-		}
-	}
-
-	private void SetStreaming(bool streaming)
-	{
-		lock (streamingLock) {
-			this.streaming = streaming;
-		}
-	}
 }

@@ -17,7 +17,6 @@ public class ClientData {
 
 	public ClientData()
 	{
-		id = 0;
 		headPosition = new Vector3 ();
 		headPose = new Quaternion ();
 		leftHandPosition = new Vector3 ();
@@ -96,12 +95,10 @@ public class ClientData {
 
 	public byte[] ToByteArray()
 	{
-		MemoryStream rawDataStream = new MemoryStream();
+		MemoryStream rawDataStream = new MemoryStream(84);
 		BigEndianBinaryWriter dataWriter = new BigEndianBinaryWriter(rawDataStream);
 
 		try {
-			dataWriter.Write(id);
-
 			dataWriter.Write(headPosition.x);
 			dataWriter.Write(headPosition.y);
 			dataWriter.Write(headPosition.z);
