@@ -54,7 +54,7 @@ public class Transform {
 
 	public byte[] toByteArray() 
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(28);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{

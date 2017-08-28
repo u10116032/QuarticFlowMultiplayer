@@ -70,13 +70,18 @@ public class PlayerData{
 
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(84);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{
-			dataWriter.write(head.toByteArray(), 0, head.toByteArray().length);
-			dataWriter.write(leftHand.toByteArray(), 0, leftHand.toByteArray().length);
-			dataWriter.write(rightHand.toByteArray(), 0, rightHand.toByteArray().length);
+			byte[] headByte = head.toByteArray();
+			dataWriter.write(headByte, 0, headByte.length);
+
+			byte[] leftHandByte = leftHand.toByteArray();
+			dataWriter.write(leftHandByte, 0, leftHandByte.length);
+
+			byte[] righthandByte = rightHand.toByteArray();
+			dataWriter.write(righthandByte, 0, righthandByte.length);
 		}
 		catch(IOException e){
 			e.printStackTrace();

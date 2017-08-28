@@ -28,6 +28,7 @@ public enum GameDatabase {
 		BufferedReader fileReader = new BufferedReader(new FileReader(databasePath));
 		
 		try {
+			// label in first row
 		    String line = fileReader.readLine();
 
 		    while (true) {
@@ -46,7 +47,7 @@ public enum GameDatabase {
 
 	public byte[] toByteArray(int selfId)
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(256);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 		
 		try{

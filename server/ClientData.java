@@ -54,11 +54,11 @@ public class ClientData {
 
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream();
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(85);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{
-			dataWriter.writeInt(id);
+			dataWriter.writeByte(id);
 			byte[] playerDataBytes = playerData.toByteArray();
 			dataWriter.write(playerDataBytes, 0, playerDataBytes.length);
 		}

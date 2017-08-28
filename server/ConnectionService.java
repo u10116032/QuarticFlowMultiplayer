@@ -14,9 +14,6 @@ public class ConnectionService {
 	private DataInputStream reader;
 	private DataOutputStream writer;
 
-	// TODO: check if thread safe
-	private Object streamLock = new Object();
-
 	private Map<String, RequestHandler> requestHandlerMap;
 
 	private Thread receiveThread;
@@ -27,10 +24,10 @@ public class ConnectionService {
 		socket.setSoTimeout(1000);
 
 		reader = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
-		writer = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+		writer = new DataOutputStream(socket.getOutputStream());
 		
 		requestHandlerMap = new ConcurrentHashMap<String, RequestHandler>();
-		requestHandlerMap.put("", new HeartBeatHandler(this));
+		requestHandlerMap.put("\0", new HeartBeatHandler(this));
 		requestHandlerMap.put("CLOSE", new CloseHandler(this));
 		requestHandlerMap.put("LOGIN", new LoginHandler(this));
 		requestHandlerMap.put("$", new StreamDataHandler(this));
@@ -60,13 +57,18 @@ public class ConnectionService {
 				List<byte[]> tokenList = splitRequestLine(requestBytes);
 
 				String requestType = new String(tokenList.get(0), "UTF-8");
-				if (!requestHandlerMap.containsKey(requestType))
-					closeService();
+				if (!requestHandlerMap.containsKey(requestType)){
+					System.out.println("no containsKey");
+					break;
+				}
 				else
 					requestHandlerMap.get(requestType).execute(tokenList.get(1 % tokenList.size()));
 			}
 			catch(IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
+				break;
+			}
+			catch(NullPointerException e){
 				break;
 			}
 		}
@@ -79,15 +81,14 @@ public class ConnectionService {
 				GameDatabase.INSTANCE.updateClientData(id, clientData);
 			}
 
-			synchronized(streamLock) {
-				reader.close();
-			 	reader = null;
+			reader.close();
+		 	reader = null;
 
-			 	writer.close();
-				writer = null;
+		 	writer.close();
+			writer = null;
 
-				socket.close();
-			}
+			socket.close();
+			
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -101,31 +102,35 @@ public class ConnectionService {
 		byte[] buffer = new byte[128];
 		int bufferCount = 0;
 		byte receivedByte;
-		while (true) {
+		for (int i = 0; i < buffer.length; ++i) {
 			receivedByte = reader.readByte();
 			if (receivedByte == '\r') {
 				receivedByte = reader.readByte();
-				if(receivedByte == '\n')
+				if(receivedByte == '\n') {
 					return Arrays.copyOf(buffer, bufferCount);
+				}
 			}
 			buffer[bufferCount++] = receivedByte;
 		}
+
+		return null;
 	}
 
-	private List<byte[]> splitRequestLine(byte[] requestBytes)
+	private static List<byte[]> splitRequestLine(byte[] requestBytes) throws NullPointerException
 	{
 		List<byte[]> tokenList = new ArrayList<byte[]>();
 
-		int delimIndex = -1;
+		int delimIndex = 0;
 		for (int i = 0; i < requestBytes.length; ++i) {
 			if (requestBytes[i] == ' ') {
-				delimIndex = i;
+				tokenList.add(Arrays.copyOfRange(requestBytes, delimIndex, i));
+				delimIndex = i+1;
 				break;
 			}
 		}
 
-		tokenList.add(Arrays.copyOf(requestBytes, delimIndex - 1));
-		tokenList.add(Arrays.copyOfRange(requestBytes, delimIndex + 1, requestBytes.length));
+		if (delimIndex != requestBytes.length)
+			tokenList.add(Arrays.copyOfRange(requestBytes, delimIndex, requestBytes.length));
 
 		return tokenList;
 	}
@@ -140,20 +145,28 @@ public class ConnectionService {
 		return this.id;
 	}
 
-	public void sendMessage(String message)
+	public void sendMessage(byte[] packet)
 	{
-		synchronized(streamLock) {
-			if (writer == null)
-				return;
-			
-			try{
-				writer.write(message.getBytes());
-			}
-			catch(IOException e){
-			
-			}
+		if (writer == null)
+			return;
+		
+		try{
+			byte[] clrf = new byte[2];
+			clrf[0] = '\r';
+			clrf[1] = '\n';
+			writer.write(packet, 0, packet.length);
+			writer.write(clrf, 0, clrf.length);
+			writer.flush();
+		}
+		catch(IOException e){
+			e.printStackTrace();
+		}
 
-			QFLogger.INSTANCE.Log("Send: " + message);
+		try{
+			QFLogger.INSTANCE.Log("Send: " + new String(packet, "UTF-8"));
+		}
+		catch(UnsupportedEncodingException  e){
+			e.printStackTrace();
 		}
 	}
 
