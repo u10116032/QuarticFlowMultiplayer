@@ -11,10 +11,18 @@ public class RemotePlayerController : MonoBehaviour, Listener {
 
 	private List<ClientData> clientDataList;
     private Dictionary<int, ClientData> clientDataMap;
+    private Dictionary<int, ClientData> clientDataMapBuffer;
+    private System.Object clientDataMapLock;
 
-	public void OnDataUpdated(List<ClientData> clientDataList)
+    public void OnDataUpdated(List<ClientData> clientDataList)
 	{
-        Dictionary<int, ClientData> lastClientDataMap = new Dictionary<int, ClientData>(clientDataMap);
+        clientDataMapBuffer = new Dictionary<int, ClientData>();
+        lock (clientDataMapLock) {
+            foreach (KeyValuePair<int, ClientData> item in clientDataMap) 
+                clientDataMapBuffer.Add(item.Key, item.Value);
+        }
+
+        Dictionary<int, ClientData> lastClientDataMap = new Dictionary<int, ClientData>(clientDataMapBuffer);
         foreach (KeyValuePair<int, ClientData> item in lastClientDataMap) {
             int id = item.Value.id;
 
@@ -27,16 +35,16 @@ public class RemotePlayerController : MonoBehaviour, Listener {
             }
 
             if (!isContained) {
-                clientDataMap.Remove(item.Value.id);
+                clientDataMapBuffer.Remove(item.Key);
             }
         }
 
         foreach (ClientData currentClientData in clientDataList) {
 
             bool isContained = false;
-            foreach (KeyValuePair<int, ClientData> item in clientDataMap) {
+            foreach (KeyValuePair<int, ClientData> item in clientDataMapBuffer) {
                 if (currentClientData.id == item.Value.id) {
-                    clientDataMap[item.Key] = currentClientData;
+                    clientDataMapBuffer[item.Key] = currentClientData;
                     isContained = true;
                     break;
                 }
@@ -44,10 +52,15 @@ public class RemotePlayerController : MonoBehaviour, Listener {
 
             if (!isContained) {
                
-                List<int> indexList = new List<int>(clientDataMap.Keys);
+                List<int> indexList = new List<int>(clientDataMapBuffer.Keys);
+                bool noKey = false;
+                if (indexList.Count == 0)
+                    noKey = true;
+                indexList.Sort();
                 int index = 0;
                 int listPointer = 0;
-                while (true)
+
+                while (!noKey)
                 {
                     if (index == indexList[listPointer])
                     {
@@ -61,50 +74,51 @@ public class RemotePlayerController : MonoBehaviour, Listener {
                         break;
                 }
 
-                clientDataMap.Add(index, currentClientData);
+                clientDataMapBuffer.Add(index, currentClientData);
                 
             }
         }
 
-        Debug.Log("data update");
+        lock (clientDataMapLock) {
+            clientDataMap = clientDataMapBuffer;
+        }
     }
 
 	void Start()
 	{
         clientDataList = new List<ClientData> ();
-        clientDataMap = new Dictionary<int, ClientData>();   
+        clientDataMap = new Dictionary<int, ClientData>();
+        clientDataMapLock = new System.Object();
     }
 
 	void Update()
 	{
-        foreach (KeyValuePair<int, ClientData> item in clientDataMap) {
-            int id = item.Key;
-            if (id > remotePlayerList.Count - 1)
-                continue;
+        lock (clientDataMapLock) { 
+            foreach (KeyValuePair<int, ClientData> item in clientDataMap) {
+                int id = item.Key;
 
-            if (remotePlayerList[id] != null) {
+                if (id > remotePlayerList.Count - 1)
+                    continue;
 
-                if (remotePlayerList[id].Head != null) { 
-                    remotePlayerList[id].Head.transform.localPosition = clientDataMap[id].headPosition;
-                    remotePlayerList[id].Head.transform.localRotation = clientDataMap[id].headPose;
+                if (remotePlayerList[id] != null) {
 
+                    if (remotePlayerList[id].Head != null) { 
+                        remotePlayerList[id].Head.transform.localPosition = clientDataMap[id].headPosition;
+                        remotePlayerList[id].Head.transform.localRotation = clientDataMap[id].headPose;
+                    }
+
+                    if (remotePlayerList[id].LeftHand != null) {
+                        remotePlayerList[id].LeftHand.transform.localPosition = clientDataMap[id].leftHandPosition;
+                        remotePlayerList[id].LeftHand.transform.localRotation = clientDataMap[id].leftHandPose;
+                    }
+
+                    if (remotePlayerList[id].RightHand != null) {
+                        remotePlayerList[id].RightHand.transform.localPosition = clientDataMap[id].rightHandPosition;
+                        remotePlayerList[id].RightHand.transform.localRotation = clientDataMap[id].rightHandPose;
+                    }
                 }
-
-                if (remotePlayerList[id].LeftHand != null)
-                {
-                    remotePlayerList[id].LeftHand.transform.localPosition = clientDataMap[id].leftHandPosition;
-                    remotePlayerList[id].LeftHand.transform.localRotation = clientDataMap[id].leftHandPose;
-
-                }
-
-                if (remotePlayerList[id].RightHand != null)
-                {
-                    remotePlayerList[id].RightHand.transform.localPosition = clientDataMap[id].rightHandPosition;
-                    remotePlayerList[id].RightHand.transform.localRotation = clientDataMap[id].rightHandPose;
-
-                }
-            }
                 
+            }
         }
-	}
+    }
 }

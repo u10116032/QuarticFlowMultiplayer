@@ -8,18 +8,17 @@ public class Test : MonoBehaviour {
 	public GameObject leftHand;
 	public GameObject rightHand;
 
-
 	// Use this for initialization
-	void Start () {
+	void Start ()
+    {
 		manager = new Manager (GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>());
-	}
+    }
 	
 	// Update is called once per frame
-	void Update () {
-		if (Input.GetKeyDown(KeyCode.A)) {
+	void Update ()
+    {
+		if (Input.GetKeyDown(KeyCode.A)) 
             manager.StartConnection();
-            Debug.Log("a is pressed");
-        }
 			
 		if (Input.GetKeyDown(KeyCode.S))
 			manager.StopConnection ();
