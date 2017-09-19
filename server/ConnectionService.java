@@ -4,8 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-// TODO: streaming
-
 public class ConnectionService {
 	private int id;
 
@@ -18,19 +16,17 @@ public class ConnectionService {
 
 	private Thread receiveThread;
 
+	private ServiceState state;
+
 	public ConnectionService (Socket socket) throws IOException
 	{
+		state = new InitialState(this);
+
 		this.socket = socket;
-		socket.setSoTimeout(1000);
+		socket.setSoTimeout(10000);
 
 		reader = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
 		writer = new DataOutputStream(socket.getOutputStream());
-		
-		requestHandlerMap = new ConcurrentHashMap<String, RequestHandler>();
-		requestHandlerMap.put("\0", new HeartBeatHandler(this));
-		requestHandlerMap.put("CLOSE", new CloseHandler(this));
-		requestHandlerMap.put("LOGIN", new LoginHandler(this));
-		requestHandlerMap.put("$", new StreamDataHandler(this));
 
 		this.id = -1;
 
@@ -45,7 +41,8 @@ public class ConnectionService {
 	}
 	/**
 	* [Packet Description]
-	* Split with One Space
+	* Split with One Space.
+	* In the end of the packet, add '\r' and '\n' in the end for tokenizer.
 	* @param CommandType [ "", CLOSE, LOGIN, $ ]
 	* @param Data        [ PlayerData in byte[] ]
 	*/	
@@ -57,18 +54,15 @@ public class ConnectionService {
 				List<byte[]> tokenList = splitRequestLine(requestBytes);
 
 				String requestType = new String(tokenList.get(0), "UTF-8");
-				if (!requestHandlerMap.containsKey(requestType)){
-					System.out.println("no containsKey");
-					break;
-				}
-				else
-					requestHandlerMap.get(requestType).execute(tokenList.get(1 % tokenList.size()));
+				state.requestExecute(requestType, tokenList.get(1 % tokenList.size()));
+
 			}
 			catch(IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
 				break;
 			}
 			catch(NullPointerException e){
+				e.printStackTrace();
 				break;
 			}
 		}
@@ -81,6 +75,9 @@ public class ConnectionService {
 				GameDatabase.INSTANCE.updateClientData(id, clientData);
 			}
 
+			if (WaitLineQueue.INSTANCE.containKey(this))
+				WaitLineQueue.INSTANCE.remove(this);
+
 			reader.close();
 		 	reader = null;
 
@@ -88,7 +85,6 @@ public class ConnectionService {
 			writer = null;
 
 			socket.close();
-			
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -135,6 +131,11 @@ public class ConnectionService {
 		return tokenList;
 	}
 
+	public void setState(ServiceState state)
+	{
+		this.state = state;
+	}
+
 	public void setId(int id)
 	{
 		this.id = id;
@@ -162,12 +163,12 @@ public class ConnectionService {
 			e.printStackTrace();
 		}
 
-		try{
-			QFLogger.INSTANCE.Log("Send: " + new String(packet, "UTF-8"));
-		}
-		catch(UnsupportedEncodingException  e){
-			e.printStackTrace();
-		}
+		// try{
+		// 	QFLogger.INSTANCE.Log("Send: " + new String(packet, "UTF-8"));
+		// }
+		// catch(UnsupportedEncodingException  e){
+		// 	e.printStackTrace();
+		// }
 	}
 
 	public void closeService()
@@ -195,5 +196,30 @@ public class ConnectionService {
 		catch(InterruptedException e){
 			e.printStackTrace();
 		}
+	}
+
+	public InetAddress getInetAddress()
+	{
+		return socket.getInetAddress();
+	}
+
+	@Override
+	public boolean equals(Object object) {
+	    if (object instanceof ConnectionService) {
+	        ConnectionService otherService = (ConnectionService) object;
+	        return this.id == otherService.getId();
+	    }
+
+	    return false;
+	}
+
+	@Override
+	public int hashCode() {
+	    return Integer.hashCode(this.id);
+	}
+
+	@Override
+	public String toString() {
+	    return String.format("ConnectionService id: (%d)", this.id);
 	}
 }

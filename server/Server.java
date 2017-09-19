@@ -7,7 +7,7 @@ import java.lang.*;
 public class Server{
 	private final int SERVER_PORT = 40000;
 	private ServerSocket serverSocket;
-
+	
  	private Server() throws Exception
  	{
 		serverSocket = new ServerSocket(SERVER_PORT);
@@ -22,7 +22,7 @@ public class Server{
 			try {
  				socket = serverSocket.accept();
 
- 				// Start service for new client. 				
+ 				// Start service for new client. 	
  				ConnectionService connection = new ConnectionService(socket);
  			}
  			catch (IOException e) {

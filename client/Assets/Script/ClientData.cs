@@ -4,8 +4,21 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 
+/// <summary>
+/// Send : status Head LHand RHand
+/// Receive : id pairId status Head LHand RHand
+/// </summary>
+
 public class ClientData {
+	
+	// @param id: account which is used to login the server
+	// @param pairId: the pairId
+
 	public byte id;
+	public byte pairId{ get; set;}
+
+	public byte status{ get; set;}
+
 	public Vector3 headPosition { get; set;}
 	public Quaternion headPose { get; set;}
 
@@ -17,6 +30,8 @@ public class ClientData {
 
 	public ClientData()
 	{
+		status = (byte)0;
+
 		headPosition = new Vector3 ();
 		headPose = new Quaternion ();
 		leftHandPosition = new Vector3 ();
@@ -25,10 +40,13 @@ public class ClientData {
 		rightHandPose = new Quaternion ();
 	}
 
-	public ClientData(byte id, Vector3 headPosition, Quaternion headPose, 
+	public ClientData(byte id, byte pairId, byte status, Vector3 headPosition, Quaternion headPose, 
 		Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
 	{
 		this.id = id;
+		this.pairId = pairId;
+		this.status = status;
+
 		this.headPosition = headPosition;
 		this.headPose = headPose;
 
@@ -49,6 +67,9 @@ public class ClientData {
 		while (true) {
 			try {
 				byte clientId = reader.ReadByte();
+				byte pairId = reader.ReadByte();
+
+				byte status = reader.ReadByte();
 
 				float pX = reader.ReadSingle();
 				float pY = reader.ReadSingle();
@@ -83,7 +104,7 @@ public class ClientData {
 				qW = reader.ReadSingle();
 				Quaternion rightHandPose = new Quaternion(qX, qY, qZ, qW);
 
-				clientDataList.Add(new ClientData(clientId, headPosition, headPose, leftHandPosition, leftHandPose, rightHandPosition, rightHandPose));
+				clientDataList.Add(new ClientData(clientId, pairId, status, headPosition, headPose, leftHandPosition, leftHandPose, rightHandPosition, rightHandPose));
 			}
 			catch (Exception e) {
 				break;
@@ -95,10 +116,12 @@ public class ClientData {
 
 	public byte[] ToByteArray()
 	{
-		MemoryStream rawDataStream = new MemoryStream(84);
+		MemoryStream rawDataStream = new MemoryStream(85);
 		BigEndianBinaryWriter dataWriter = new BigEndianBinaryWriter(rawDataStream);
 
 		try {
+			dataWriter.Write(status);
+
 			dataWriter.Write(headPosition.x);
 			dataWriter.Write(headPosition.y);
 			dataWriter.Write(headPosition.z);
@@ -131,7 +154,7 @@ public class ClientData {
 
 	public override string ToString()
 	{
-		string dataString = id.ToString() + headPosition.ToString() + headPose.ToString()
+		string dataString = id.ToString() + pairId.ToString() + status.ToString() + headPosition.ToString() + headPose.ToString()
 		+ leftHandPosition.ToString() + leftHandPose.ToString()
 		+ rightHandPosition.ToString() + rightHandPose.ToString();
 		return dataString;				

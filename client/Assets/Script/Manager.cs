@@ -9,7 +9,19 @@ using System.IO;
 using System.Collections.Generic;
 
 public class Manager {
-	private const string remoteIP = "127.0.0.1";
+
+	private static Manager Instance_;
+	public static Manager Instance
+	{
+		get
+		{
+			if (Instance_ == null)
+				Instance_ = new Manager ();
+			return Instance_;
+		}
+	}
+
+	private const string remoteIP = "192.168.50.43";
 	private int serverPort = 40000;
 
 	private TcpClient tcpClient;
@@ -28,7 +40,49 @@ public class Manager {
 
     private ClientData clientData;
 
-	public Manager (Listener listener)
+	private OnNetworkDataUpdatedListener onNetworkDataUpdatedListener;
+	private OnPairIdReceivedListener onPairIdReceivedListener;
+	private OnLoggedinListener onLoggedinListener;
+	private OnDisconnectedListener onDisconnectedLinstener;
+
+	public void SetOnNetworkDataUpdatedListener(OnNetworkDataUpdatedListener onNetworkDataUpdatedListener)
+	{
+		this.onNetworkDataUpdatedListener = onNetworkDataUpdatedListener;
+	}
+
+	public void SetOnPairIdReceivedListener(OnPairIdReceivedListener onPairIdReceivedListener)
+	{
+		this.onPairIdReceivedListener = onPairIdReceivedListener;
+	}
+
+	public void SetOnLoggedinListener(OnLoggedinListener onLoggedinListener)
+	{
+		this.onLoggedinListener = onLoggedinListener;
+	}
+
+	public void SetOnDisconnectedListener(OnDisconnectedListener onDisconnectedLinstener)
+	{
+		this.onDisconnectedLinstener = onDisconnectedLinstener;
+	}
+		
+	public void OnDataUpdated(List<ClientData> clientDataList){
+		if(onNetworkDataUpdatedListener != null)
+			onNetworkDataUpdatedListener.OnDataUpdated (clientDataList);
+	}
+
+	public void OnPairIdReceived(int pairId)
+	{
+		if (onPairIdReceivedListener != null)
+			onPairIdReceivedListener.OnPairIdReceived (pairId);
+	}
+
+	public void OnLoggedin()
+	{
+		if (onLoggedinListener != null)
+			onLoggedinListener.OnLoggedin ();
+	}
+
+	private Manager ()
 	{
         clientData = new ClientData();
 
@@ -36,7 +90,8 @@ public class Manager {
 
         requestMap = new Dictionary<String, ResponseHandler>();
         requestMap["SUCCESS"] = new SuccessHandler(this);
-        requestMap["$"] = new StreamDataHandler(this, listener);
+		requestMap["$"] = new StreamDataHandler(this);
+		requestMap["PAIRID"] = new PairIdHandler(this);
 
         requestQueueLock = new System.Object();
         runningLock = new System.Object();
@@ -58,16 +113,7 @@ public class Manager {
 
     public void StopConnection()
 	{
-        SetRunning(false);
         requestQueue.Enqueue(Encoding.UTF8.GetBytes("CLOSE"));
-
-        if (tcpClient != null)
-        {
-            tcpClient.Close();
-            tcpClient = null;
-        }
-
-        Debug.Log("Disconnected.");
     }
 		
 	private void InitialConnect () {
@@ -89,8 +135,6 @@ public class Manager {
 
     private void Send()
     {
-        Debug.Log("Sending stream data...");
-
         DateTime lastTime = DateTime.Now;
         while (IsRunning())
         {
@@ -112,8 +156,6 @@ public class Manager {
 
     private void Receive()
 	{
-		Debug.Log("Receiving stream data...");
-
         while (IsRunning())
         {
             try {
@@ -128,6 +170,8 @@ public class Manager {
                     requestMap[requestType].execute(tokenList[1 % tokenList.Count]);
             }
             catch (IOException e) {
+                SetRunning(false);
+                onDisconnectedLinstener.OnDisconnected();
                 break;
             }
         }
@@ -168,10 +212,21 @@ public class Manager {
             package[package.Length - 1] = Convert.ToByte('\n');
 
             stream.Write(package, 0, package.Length);
+
+            if (requestByte.ToString() == "CLOSE") {
+                SetRunning(false);
+                if (tcpClient != null) {
+                    tcpClient.Close();
+                    tcpClient = null;
+                }
+                Debug.Log("Disconnected.");
+            }
+
             //stream.Flush();
             Debug.Log("Send: " + Encoding.UTF8.GetString(requestByte));
         }
         catch (Exception e) {
+            SetRunning(false);
             Debug.Log(e.ToString());
         }
     }
@@ -244,8 +299,9 @@ public class Manager {
         }
     }
 
-    public void UpdateClientData(Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
+    public void UpdateClientData(byte status, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
     {
+		clientData.status = status;
         clientData.headPosition = headPosition;
         clientData.headPose = headPose;
         clientData.leftHandPosition = leftHandPosition;
@@ -258,6 +314,5 @@ public class Manager {
     {
         return this.clientData;
     }
-
-
 }
+	

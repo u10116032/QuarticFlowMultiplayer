@@ -9,9 +9,8 @@ public class StreamDataHandler extends RequestHandler{
 
 	public void execute(byte[] tokenByte)
 	{
-		// TODO: check isOnline
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(service.getId());
-
+		
 		if (clientData == null){
 			service.closeService();
 			return;
@@ -21,13 +20,11 @@ public class StreamDataHandler extends RequestHandler{
 			service.closeService();
 			return;
 		}
-
-		try{
-			clientData.setPlayerData(PlayerData.parse(tokenByte));
-		}
-		catch(IOException e){
-			e.printStackTrace();
-		}
+	
+		PlayerData playerData = PlayerData.parse(tokenByte);
+		if (playerData == null)
+			playerData = GameDatabase.INSTANCE.getClientData(service.getId()).getPlayerData();
+		clientData.setPlayerData(playerData);
 
 		GameDatabase.INSTANCE.updateClientData(service.getId(), clientData);
 	}

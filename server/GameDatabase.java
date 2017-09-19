@@ -5,14 +5,12 @@ import java.io.*;
 public enum GameDatabase {
 	INSTANCE;
 
-	private byte gameState;
 	private Map<Integer, ClientData> clientDataMap;
 
 	private static final String DATABASE_PATH = "./database.txt";
 
 	GameDatabase() 
 	{
-		gameState = (byte)0;
 		clientDataMap = new ConcurrentHashMap<Integer, ClientData>();	
 
 		try{
@@ -45,14 +43,14 @@ public enum GameDatabase {
 		}
 	}
 
-	public byte[] toByteArray(int selfId)
+	public byte[] toByteArray(int selfId, int roomId)
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(256);
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(1024);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 		
 		try{
 			for (ClientData clientData : clientDataMap.values()) {
-				if (clientData.getId() != selfId && clientData.isOnline())
+				if (clientData.getPlayerData() != null &&clientData != null && clientData.getId() != selfId && clientData.getRoomNumber() == roomId && clientData.isOnline())
 					dataWriter.write(clientData.toByteArray());
 			}
 		}

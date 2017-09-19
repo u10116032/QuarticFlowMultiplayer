@@ -4,14 +4,19 @@ using UnityEngine;
 
 public class Test : MonoBehaviour {
 	private Manager manager;
+
+	public int status;
 	public GameObject head;
 	public GameObject leftHand;
 	public GameObject rightHand;
 
-	// Use this for initialization
 	void Start ()
     {
-		manager = new Manager (GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>());
+		manager = Manager.Instance;
+		manager.SetOnNetworkDataUpdatedListener (GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>());
+		manager.SetOnPairIdReceivedListener (new TestPairIdListener());
+		manager.SetOnLoggedinListener (new TestLogedinListener());
+		manager.SetOnDisconnectedListener (new TestDisconnectedListener());
     }
 	
 	// Update is called once per frame
@@ -23,7 +28,7 @@ public class Test : MonoBehaviour {
 		if (Input.GetKeyDown(KeyCode.S))
 			manager.StopConnection ();
 
-		manager.UpdateClientData (head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
+		manager.UpdateClientData ((byte)status, head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
 	}
 
 	private IEnumerator ConnectTask()

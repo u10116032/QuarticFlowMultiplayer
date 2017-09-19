@@ -1,4 +1,4 @@
-public abstract class RequestHandler{
+public abstract class RequestHandler {
 
 	protected ConnectionService service;
 

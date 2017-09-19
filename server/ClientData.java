@@ -1,8 +1,12 @@
 import java.io.*;
 
 public class ClientData {
+	
+	// Database Entry
 
 	private int id;
+	private int pairId;
+	private int roomNumber;
 	private boolean online;
 
 	private PlayerData playerData;
@@ -12,6 +16,8 @@ public class ClientData {
 	public ClientData(int id)
 	{
 		this.id = id;
+		this.pairId = -1; // -1 represent non paired.
+		this.roomNumber = -1; // -1 represent non paired.
 		this.online = false;
 
 		this.service = null;
@@ -30,6 +36,26 @@ public class ClientData {
 	public int getId()
 	{
 		return id;
+	}
+
+	public void setRoomNumber(int roomNumber)
+	{
+		this.roomNumber = roomNumber;
+	}
+
+	public int getRoomNumber()
+	{
+		return roomNumber;
+	}
+
+	public void setPairId(int pairId)
+	{
+		this.pairId = pairId;
+	}
+
+	public int getPairId()
+	{
+		return this.pairId;
 	}
 
 	public void setOnline(boolean online)
@@ -52,13 +78,16 @@ public class ClientData {
 		return playerData;
 	}
 
+	
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(85);
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(87);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{
 			dataWriter.writeByte(id);
+			dataWriter.writeByte(pairId);
+			
 			byte[] playerDataBytes = playerData.toByteArray();
 			dataWriter.write(playerDataBytes, 0, playerDataBytes.length);
 		}
@@ -73,7 +102,6 @@ public class ClientData {
 	public String toString()
 	{
 		String thisString = "id: " + id + 
-		",online: " + online + 
 		",playerData: " + playerData.toString();
 
 		return thisString;

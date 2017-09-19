@@ -5,17 +5,14 @@ using System.Collections.Generic;
 
 public class StreamDataHandler : ResponseHandler{
 
-    private Listener listener;
-
-    public StreamDataHandler(Manager manager, Listener listener) : base(manager)
+	public StreamDataHandler(Manager manager) : base(manager)
     {
-        this.listener = listener;
+		
     }
 
     public override void execute(byte[] contents)
     {
         List<ClientData> clientDataList = ClientData.Parse(contents);
-        if (listener != null)
-           listener.OnDataUpdated(clientDataList);
+		manager.OnDataUpdated (clientDataList);
     }
 }

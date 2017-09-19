@@ -3,17 +3,12 @@ import java.nio.*;
 
 public class LoginHandler extends RequestHandler{
 
-	private Thread sendThread;
+	private ConnectionService service;
 
-	// TODO: execute()
 	public LoginHandler(ConnectionService service)
 	{
 		super(service);
-		sendThread = new Thread(new Runnable() {
-            public void run() { 
-                sendTask();
-            } 
-        });
+		this.service = service;
 	}
 
 	public void execute(byte[] tokenByte)
@@ -24,12 +19,12 @@ public class LoginHandler extends RequestHandler{
 			id = Integer.parseInt(idString);
 		}
 		catch(NumberFormatException e) {
-			QFLogger.INSTANCE.Log("Illegal Account");
+			QFLogger.INSTANCE.Log("Illegal account format error /" + service.getInetAddress());
 			service.closeService();
 			return;
 		}
 		catch(UnsupportedEncodingException e ){
-			QFLogger.INSTANCE.Log("Illegal Account");
+			QFLogger.INSTANCE.Log("Illegal account format error /" + service.getInetAddress());
 			service.closeService();
 			return;
 		}
@@ -38,6 +33,7 @@ public class LoginHandler extends RequestHandler{
 
 		if (clientData == null){
 			// Do not fetch the clientData of this id, close the current service
+			QFLogger.INSTANCE.Log("The account " + id + " doesn't exist /" + service.getInetAddress());
 			service.closeService();
 			return;
 		}
@@ -45,6 +41,7 @@ public class LoginHandler extends RequestHandler{
 		service.setId(id);
 
 		if (clientData.isOnline()){
+
 			// Check whether same service send twice LOGIN
 			if (clientData.getService() == service)
 				return;
@@ -64,34 +61,19 @@ public class LoginHandler extends RequestHandler{
 		String responseType = "SUCCESS";
 		service.sendMessage(responseType.getBytes());
 
-        sendThread.start();
+		
 
-        QFLogger.INSTANCE.Log("id: " + id + " log on");
-	}
-
-	private void sendTask()
-	{
-		int id = service.getId();
-
-		long lastTime = System.currentTimeMillis( );
-		while(GameDatabase.INSTANCE.getClientData(id).isOnline()){
-			
-			long currentTime = System.currentTimeMillis( );
-			
-			if (currentTime - lastTime < 33.0)
-				continue;
-
-			String requestType = "$ ";
-			byte[] clientDataByte = GameDatabase.INSTANCE.toByteArray(id);
-
-			byte[] packet = new byte[requestType.getBytes().length + clientDataByte.length];
-			System.arraycopy(requestType.getBytes(), 0, packet, 0, requestType.getBytes().length);
-			System.arraycopy(clientDataByte, 0, packet, requestType.getBytes().length, clientDataByte.length);
-
-			service.sendMessage(packet);
-
-			lastTime = currentTime;		
+		if (clientData.getRoomNumber() != -1 && clientData.getPairId() != -1){
+			QFLogger.INSTANCE.Log("Relogin id: " + id + service.getInetAddress());
+			service.setState(new PairState(clientData.getRoomNumber(), this.service));
 		}
-		QFLogger.INSTANCE.Log("sendTask closed");
+		else{
+			QFLogger.INSTANCE.Log("Login id: " + id + service.getInetAddress());
+			service.setState(new LoginState(this.service));
+		}
+
+        
 	}
+
+	
 }
