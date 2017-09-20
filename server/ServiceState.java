@@ -10,6 +10,8 @@ public abstract class ServiceState {
 		requestHandlerMap = new ConcurrentHashMap<String, RequestHandler>();
 		requestHandlerMap.put("\0", new HeartBeatHandler(service));
 		requestHandlerMap.put("CLOSE", new CloseHandler(service));	
+		
+		// TODO: $ request should not be here, it should be in the constructor of PairState. However, bugs exist.
 		requestHandlerMap.put("$", new StreamDataHandler(service));	
 	}
 
