@@ -59,7 +59,7 @@ public enum WaitLineQueue {
 			}
 		}
 
-		availableRoomNumberMap.replace(availableNumber, 2); // The number of players for each room.
+		availableRoomNumberMap.replace(availableNumber, maxPlayerNumberPerRoom); // The number of players for each room.
 
 		return availableNumber;
 	}
