@@ -11,13 +11,15 @@ public class CloseHandler extends RequestHandler{
 
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
 		
-		clientData.setPairId(-1);
+		if (clientData.getRoomNumber() != -1 && clientData.getPairId() != -1){
+			clientData.setPairId(-1);
 
-		int roomNumber = clientData.getRoomNumber();
-		WaitLineQueue.INSTANCE.releaseRoomNumber(roomNumber);
-		clientData.setRoomNumber(-1); 
+			int roomNumber = clientData.getRoomNumber();
+			WaitLineQueue.INSTANCE.releaseRoomNumber(roomNumber);
+			clientData.setRoomNumber(-1); 
 
-		GameDatabase.INSTANCE.updateClientData(id, clientData);
+			GameDatabase.INSTANCE.updateClientData(id, clientData);
+		}
 
 		service.closeService();
 		QFLogger.INSTANCE.Log("Service Logout /id: " + service.getId());
