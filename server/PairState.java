@@ -55,8 +55,11 @@ public class PairState extends ServiceState {
 
 			lastTime = currentTime;		
 		}
-
-		WaitLineQueue.INSTANCE.releaseRoomNumber(roomNumber);
 	}
 
+	@Override
+	public String toString()
+	{
+		return this.getClass().getSimpleName();
+	}
 }
