@@ -17,7 +17,7 @@ public class CloseHandler extends RequestHandler{
 			int roomNumber = clientData.getRoomNumber();
 			WaitLineQueue.INSTANCE.releaseRoomNumber(roomNumber);
 			clientData.setRoomNumber(-1); 
-
+			
 			GameDatabase.INSTANCE.updateClientData(id, clientData);
 		}
 
