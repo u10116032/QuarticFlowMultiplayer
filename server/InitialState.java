@@ -5,4 +5,10 @@ public class InitialState extends ServiceState {
 		super(service);
 		requestHandlerMap.put("LOGIN", new LoginHandler(service));
 	}
+
+	@Override
+	public String toString()
+	{
+		return this.getClass().getSimpleName();
+	}
 }

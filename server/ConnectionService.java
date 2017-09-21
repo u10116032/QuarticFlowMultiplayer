@@ -220,6 +220,8 @@ public class ConnectionService {
 
 	@Override
 	public String toString() {
-	    return String.format("ConnectionService id: (%d)", this.id);
+		String thisString = "id" + id + 
+			"state: " + state.toString();
+	    return thisString;
 	}
 }

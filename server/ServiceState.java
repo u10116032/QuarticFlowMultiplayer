@@ -21,4 +21,7 @@ public abstract class ServiceState {
 			requestHandlerMap.get(requestType).execute(data);
 	}
 
+	@Override
+	public abstract String toString();
+
 }

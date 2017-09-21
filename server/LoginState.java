@@ -67,4 +67,10 @@ public class LoginState extends ServiceState{
 		}
 	}
 
+	@Override
+	public String toString()
+	{
+		return this.getClass().getSimpleName();
+	}
+
 }

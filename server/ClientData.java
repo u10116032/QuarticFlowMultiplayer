@@ -102,6 +102,9 @@ public class ClientData {
 	public String toString()
 	{
 		String thisString = "id: " + id + 
+		"pairId: " + pairId +
+		"roomNumber: " + roomNumber + 
+		"online" + online +
 		",playerData: " + playerData.toString();
 
 		return thisString;
