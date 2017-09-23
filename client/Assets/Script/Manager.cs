@@ -21,7 +21,7 @@ public class Manager {
 		}
 	}
 
-	private const string remoteIP = "192.168.50.43";
+	private const string remoteIP = "140.112.31.113";
 	private int serverPort = 40000;
 
 	private TcpClient tcpClient;
@@ -96,19 +96,23 @@ public class Manager {
         requestQueueLock = new System.Object();
         runningLock = new System.Object();
 
-        running = true;
-
-        sendThread = new Thread(Send);
-        receiveThread = new Thread(Receive);
-
-        InitialConnect();
-        sendThread.Start();
-        receiveThread.Start();
+		SetRunning(false);
 	}
 
-	public void StartConnection()
+	public void StartConnection(string remoteIp)
 	{
-        requestQueue.Enqueue(Encoding.UTF8.GetBytes("LOGIN 3"));
+		InitialConnect(remoteIp);
+
+		sendThread = new Thread(Send);
+		receiveThread = new Thread(Receive);
+
+		sendThread.Start();
+		receiveThread.Start();
+	}
+
+	public void Login(int id)
+	{
+		requestQueue.Enqueue(Encoding.UTF8.GetBytes("LOGIN " + id.ToString()));
     }
 
     public void StopConnection()
@@ -116,15 +120,17 @@ public class Manager {
         requestQueue.Enqueue(Encoding.UTF8.GetBytes("CLOSE"));
     }
 		
-	private void InitialConnect () {
+	private void InitialConnect (string remoteIp) {
 		Debug.Log("Attempt connection with server...");
 
 		try {
-			tcpClient = new TcpClient(remoteIP, serverPort);
+			tcpClient = new TcpClient(remoteIp, serverPort);
 		
 			Debug.Log("Connected to server.");
             
             stream = tcpClient.GetStream();
+
+			SetRunning(true);
         }
         catch (SocketException e) {
             // Connect fail.
