@@ -11,6 +11,9 @@ public class CloseHandler extends RequestHandler{
 
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(id);
 		
+		if(clientData == null)
+			return;
+
 		if (clientData.getRoomNumber() != -1 && clientData.getPairId() != -1){
 			clientData.setPairId(-1);
 
