@@ -7,13 +7,15 @@ public class PairIdHandler : ResponseHandler {
 
 	public PairIdHandler(Manager manager) : base(manager)
 	{
-		clientDataThread = new Thread(clientDataTask);
+		
 	}
 
 	public override void execute (byte[] contents)
 	{
 		int selfPairId = contents[0];
 		manager.OnPairIdReceived (selfPairId);
+
+		clientDataThread = new Thread(clientDataTask);
 		clientDataThread.Start();
 	}
 
