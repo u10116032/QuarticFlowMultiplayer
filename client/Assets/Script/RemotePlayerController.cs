@@ -14,8 +14,8 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
     private Dictionary<int, ClientData> clientDataMapBuffer;
     private System.Object clientDataMapLock;
 
-	// onstate change deligation.
-	public void addOnStatusChangedList(int index, OnStatusChanged listener)
+	// add onstate change delegation.
+	public void addOnStatusChangedMap(int index, OnStatusChanged listener)
 	{
         onStatusChangedMap.Add (index, listener);
 	}
@@ -99,14 +99,20 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
         }
     }
 
+	public ClientData GetRemoteClientDataByIndex(int index)
+	{
+		return remotePlayerList [index].clientData;
+	}
+
 	void Start()
 	{
         clientDataMap = new Dictionary<int, ClientData>();
         clientDataMapLock = new System.Object();
 
-        OnStatusChanged onStatusChanged = null;
+		OnStatusChanged onStatusChanged = null;
 		for (int i = 0; i < remotePlayerList.Count; ++i)
-            onStatusChangedMap.Add(i, onStatusChanged);
+			onStatusChangedMap.Add(i, onStatusChanged);
+
     }
 
 	void Update()
@@ -118,31 +124,32 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
                 if (id > remotePlayerList.Count - 1)
                     continue;
 
-                if (remotePlayerList[id] != null) {
+                if (remotePlayerList[id] == null) 
+					continue;
+				
+				// check if current remotePlayer's status is changed
+				ClientData lastRemoteClientData = remotePlayerList [id].clientData;
+				if (lastRemoteClientData != null && onStatusChangedMap[id] != null) {
+					if (lastRemoteClientData.status != clientDataMap [id].status)
+                        onStatusChangedMap[id] (clientDataMap [id].status);		
+				}
 
-					ClientData remoteClientData = remotePlayerList [id].clientData;
-					if (remoteClientData != null && onStatusChangedMap[id] != null) {
-						if (remotePlayerList [id].clientData.status != clientDataMap [id].status)
-                            onStatusChangedMap[id] (clientDataMap [id].status);		
-					}
+				// update clientData here.
+				remotePlayerList [id].clientData = clientDataMap [id];
+				
+                if (remotePlayerList[id].Head != null) { 
+                    remotePlayerList[id].Head.transform.localPosition = clientDataMap[id].headPosition;
+                    remotePlayerList[id].Head.transform.localRotation = clientDataMap[id].headPose;
+                }
 
-					// update clientData here.
-					remotePlayerList [id].clientData = clientDataMap [id];
-					
-                    if (remotePlayerList[id].Head != null) { 
-                        remotePlayerList[id].Head.transform.localPosition = clientDataMap[id].headPosition;
-                        remotePlayerList[id].Head.transform.localRotation = clientDataMap[id].headPose;
-                    }
+                if (remotePlayerList[id].LeftHand != null) {
+                    remotePlayerList[id].LeftHand.transform.localPosition = clientDataMap[id].leftHandPosition;
+                    remotePlayerList[id].LeftHand.transform.localRotation = clientDataMap[id].leftHandPose;
+                }
 
-                    if (remotePlayerList[id].LeftHand != null) {
-                        remotePlayerList[id].LeftHand.transform.localPosition = clientDataMap[id].leftHandPosition;
-                        remotePlayerList[id].LeftHand.transform.localRotation = clientDataMap[id].leftHandPose;
-                    }
-
-                    if (remotePlayerList[id].RightHand != null) {
-                        remotePlayerList[id].RightHand.transform.localPosition = clientDataMap[id].rightHandPosition;
-                        remotePlayerList[id].RightHand.transform.localRotation = clientDataMap[id].rightHandPose;
-                    }
+                if (remotePlayerList[id].RightHand != null) {
+                    remotePlayerList[id].RightHand.transform.localPosition = clientDataMap[id].rightHandPosition;
+                    remotePlayerList[id].RightHand.transform.localRotation = clientDataMap[id].rightHandPose;
                 }
                 
             }

@@ -5,8 +5,8 @@ using System.IO;
 using System;
 
 /// <summary>
-/// Send : status Head LHand RHand
-/// Receive : id pairId status Head LHand RHand
+/// Send : status breathDegree breathHeight Head LHand RHand [93byte]
+/// Receive : id pairId status breathDegree breathHeight Head LHand RHand [95byte]
 /// </summary>
 
 public class ClientData {
@@ -18,6 +18,8 @@ public class ClientData {
 	public byte pairId{ get; set;}
 
 	public byte status{ get; set;}
+	public float breathDegree{ get;set;}
+	public float breathHeight{ get; set;}
 
 	public Vector3 headPosition { get; set;}
 	public Quaternion headPose { get; set;}
@@ -32,20 +34,28 @@ public class ClientData {
 	{
 		status = (byte)0;
 
+		breathDegree = 0.0f;
+		breathHeight = 0.0f;
+
 		headPosition = new Vector3 ();
 		headPose = new Quaternion ();
+
 		leftHandPosition = new Vector3 ();
 		leftHandPose = new Quaternion ();
+
 		rightHandPosition = new Vector3 ();
 		rightHandPose = new Quaternion ();
 	}
-
-	public ClientData(byte id, byte pairId, byte status, Vector3 headPosition, Quaternion headPose, 
+		
+	public ClientData(byte id, byte pairId, byte status, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, 
 		Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
 	{
 		this.id = id;
 		this.pairId = pairId;
 		this.status = status;
+
+		this.breathDegree = breathDegree;
+		this.breathHeight = breathHeight;
 
 		this.headPosition = headPosition;
 		this.headPose = headPose;
@@ -56,7 +66,7 @@ public class ClientData {
 		this.rightHandPosition = rightHandPosition;
 		this.rightHandPose = rightHandPose;
 	}
-
+		
 	public static List<ClientData> Parse(byte[] rawData)
 	{
 		List<ClientData> clientDataList = new List<ClientData>();
@@ -70,6 +80,9 @@ public class ClientData {
 				byte pairId = reader.ReadByte();
 
 				byte status = reader.ReadByte();
+
+				float breathDegree = reader.ReadSingle();
+				float breathHeight = reader.ReadSingle();
 
 				float pX = reader.ReadSingle();
 				float pY = reader.ReadSingle();
@@ -104,7 +117,7 @@ public class ClientData {
 				qW = reader.ReadSingle();
 				Quaternion rightHandPose = new Quaternion(qX, qY, qZ, qW);
 
-				clientDataList.Add(new ClientData(clientId, pairId, status, headPosition, headPose, leftHandPosition, leftHandPose, rightHandPosition, rightHandPose));
+				clientDataList.Add(new ClientData(clientId, pairId, status, breathDegree, breathHeight, headPosition, headPose, leftHandPosition, leftHandPose, rightHandPosition, rightHandPose));
 			}
 			catch (Exception e) {
 				break;
@@ -113,14 +126,17 @@ public class ClientData {
 
 		return clientDataList;
 	}
-
+		
 	public byte[] ToByteArray()
 	{
-		MemoryStream rawDataStream = new MemoryStream(85);
+		MemoryStream rawDataStream = new MemoryStream(93);
 		BigEndianBinaryWriter dataWriter = new BigEndianBinaryWriter(rawDataStream);
 
 		try {
 			dataWriter.Write(status);
+
+			dataWriter.Write(breathDegree);
+			dataWriter.Write(breathHeight);
 
 			dataWriter.Write(headPosition.x);
 			dataWriter.Write(headPosition.y);
@@ -151,12 +167,21 @@ public class ClientData {
 		}
 		return rawDataStream.ToArray();
 	}
-
+		
 	public override string ToString()
 	{
-		string dataString = id.ToString() + pairId.ToString() + status.ToString() + headPosition.ToString() + headPose.ToString()
-		+ leftHandPosition.ToString() + leftHandPose.ToString()
-		+ rightHandPosition.ToString() + rightHandPose.ToString();
+		string dataString = id.ToString() + 
+			pairId.ToString() + 
+			status.ToString() + 
+			breathDegree.ToString() +
+			breathHeight.ToString() +
+			headPosition.ToString() + 
+			headPose.ToString() + 
+			leftHandPosition.ToString() + 
+			leftHandPose.ToString() + 
+			rightHandPosition.ToString() + 
+			rightHandPose.ToString();
+		
 		return dataString;				
 	}
 }

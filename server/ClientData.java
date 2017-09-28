@@ -78,10 +78,9 @@ public class ClientData {
 		return playerData;
 	}
 
-	
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(87);
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(95);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{

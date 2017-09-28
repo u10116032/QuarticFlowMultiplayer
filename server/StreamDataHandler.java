@@ -11,12 +11,7 @@ public class StreamDataHandler extends RequestHandler{
 	{
 		ClientData clientData = GameDatabase.INSTANCE.getClientData(service.getId());
 		
-		if (clientData == null){
-			service.closeService();
-			return;
-		}
-
-		if (!clientData.isOnline()){
+		if (clientData == null || !clientData.isOnline()){
 			service.closeService();
 			return;
 		}

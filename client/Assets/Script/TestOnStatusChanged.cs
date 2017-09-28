@@ -9,7 +9,7 @@ public class TestOnStatusChanged : MonoBehaviour {
 
         // set OnStateChanged per remote player by id
         RemotePlayerController remotePlayerController = GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>();   
-        remotePlayerController.addOnStatusChangedList(0, onStatusChanged);
+        remotePlayerController.addOnStatusChangedMap(0, onStatusChanged);
     }
 
 }

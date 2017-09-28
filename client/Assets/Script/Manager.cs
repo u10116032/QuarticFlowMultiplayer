@@ -64,8 +64,8 @@ public class Manager {
 	{
 		this.onDisconnectedLinstener = onDisconnectedLinstener;
 	}
-		
-	public void OnDataUpdated(List<ClientData> clientDataList){
+
+	public void OnNetworkDataUpdated(List<ClientData> clientDataList){
 		if(onNetworkDataUpdatedListener != null)
 			onNetworkDataUpdatedListener.OnDataUpdated (clientDataList);
 	}
@@ -304,14 +304,20 @@ public class Manager {
             return running;
         }
     }
-
-    public void UpdateClientData(byte status, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
+		
+    public void UpdateClientData(byte status, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
     {
 		clientData.status = status;
+
+		clientData.breathDegree = breathDegree;
+		clientData.breathHeight = breathHeight;
+
         clientData.headPosition = headPosition;
         clientData.headPose = headPose;
+
         clientData.leftHandPosition = leftHandPosition;
         clientData.leftHandPose = leftHandPose;
+
         clientData.rightHandPosition = rightHandPosition;
         clientData.rightHandPose = rightHandPose;
     }

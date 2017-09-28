@@ -13,6 +13,7 @@ public class StreamDataHandler : ResponseHandler{
     public override void execute(byte[] contents)
     {
         List<ClientData> clientDataList = ClientData.Parse(contents);
-		manager.OnDataUpdated (clientDataList);
+
+		manager.OnNetworkDataUpdated (clientDataList);
     }
 }

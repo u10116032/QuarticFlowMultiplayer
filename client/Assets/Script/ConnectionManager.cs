@@ -7,7 +7,11 @@ public class ConnectionManager : MonoBehaviour {
 
 	public string remoteIp = "140.112.31.113";
 	public int LoginId;
-	public int status;
+	public int status = 0;
+
+	public float breathDegree = 0.0f;
+	public float breathHeight = 0.0f;
+
 	public GameObject head;
 	public GameObject leftHand;
 	public GameObject rightHand;
@@ -33,7 +37,7 @@ public class ConnectionManager : MonoBehaviour {
 		if (Input.GetKeyDown(KeyCode.D))
 			manager.StopConnection ();
 
-		manager.UpdateClientData ((byte)status, head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
+		manager.UpdateClientData ((byte)status, breathDegree, breathHeight, head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
 	}
 
 //	private IEnumerator ConnectTask()
