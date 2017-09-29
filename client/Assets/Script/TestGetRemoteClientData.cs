@@ -12,6 +12,8 @@ public class TestGetRemoteClientData : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		print("breathDegree: " + remotePlayerController.GetRemoteClientDataByIndex (0).breathDegree + ", breathHeight: " + remotePlayerController.GetRemoteClientDataByIndex (0).breathHeight);
+		ClientData remoteClientData = remotePlayerController.GetRemoteClientDataByIndex (0);
+		if (remoteClientData != null)
+			print("breathDegree: " + remoteClientData.breathDegree + ", breathHeight: " + remoteClientData.breathHeight);
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListener {
@@ -17,7 +18,12 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
 	// add onstate change delegation.
 	public void addOnStatusChangedMap(int index, OnStatusChanged listener)
 	{
-        onStatusChangedMap.Add (index, listener);
+		try{
+        	onStatusChangedMap.Add (index, listener);
+		}
+		catch(ArgumentException){
+			onStatusChangedMap [index] = listener;
+		}
 	}
 
     public void OnDataUpdated(List<ClientData> clientDataList)
@@ -110,8 +116,15 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
         clientDataMapLock = new System.Object();
 
 		OnStatusChanged onStatusChanged = null;
-		for (int i = 0; i < remotePlayerList.Count; ++i)
-			onStatusChangedMap.Add(i, onStatusChanged);
+		for (int i = 0; i < remotePlayerList.Count; ++i) {
+			try{
+				onStatusChangedMap.Add(i, onStatusChanged);
+			}
+			catch(ArgumentException){
+				onStatusChangedMap [i] = onStatusChanged;
+			}
+		}
+			
 
     }
 

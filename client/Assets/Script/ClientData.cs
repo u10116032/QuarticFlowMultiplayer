@@ -37,14 +37,14 @@ public class ClientData {
 		breathDegree = 0.0f;
 		breathHeight = 0.0f;
 
-		headPosition = new Vector3 ();
-		headPose = new Quaternion ();
+		headPosition = new Vector3 (0.0f, 0.0f, 0.0f);
+		headPose = new Quaternion (0.0f, 0.0f, 0.0f, 0.0f);
 
-		leftHandPosition = new Vector3 ();
-		leftHandPose = new Quaternion ();
+		leftHandPosition = new Vector3 (0.0f, 0.0f, 0.0f);
+		leftHandPose = new Quaternion (0.0f, 0.0f, 0.0f, 0.0f);
 
-		rightHandPosition = new Vector3 ();
-		rightHandPose = new Quaternion ();
+		rightHandPosition = new Vector3 (0.0f, 0.0f, 0.0f);
+		rightHandPose = new Quaternion (0.0f, 0.0f, 0.0f, 0.0f);
 	}
 		
 	public ClientData(byte id, byte pairId, byte status, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, 
