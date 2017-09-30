@@ -312,20 +312,17 @@ public class Manager {
 		clientData.breathDegree = breathDegree;
 		clientData.breathHeight = breathHeight;
 
-		if(headPosition != null)
-        	clientData.headPosition = headPosition;
-		if(headPose != null)
-        	clientData.headPose = headPose;
+		if (headPosition != null || headPose != null || leftHandPosition != null || leftHandPose != null || rightHandPosition != null || rightHandPose != null) {
+			clientData.headPosition = headPosition;
+			clientData.headPose = headPose;
 
-		if(leftHandPosition != null)
-        	clientData.leftHandPosition = leftHandPosition;
-		if(leftHandPose != null)
+			clientData.leftHandPosition = leftHandPosition;
 			clientData.leftHandPose = leftHandPose;
-		
-		if(rightHandPosition != null)
-        	clientData.rightHandPosition = rightHandPosition;
-		if(rightHandPose != null)
+
+			clientData.rightHandPosition = rightHandPosition;
 			clientData.rightHandPose = rightHandPose;
+		}
+        	
     }
 
     public ClientData GetClientData()
