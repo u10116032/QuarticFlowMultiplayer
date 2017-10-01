@@ -5,26 +5,12 @@ using UnityEngine;
 
 public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListener {
 
-	// RemotePlayer list and StateChanged delegate should be set first.
+	// RemotePlayer list should be set first.
     public List<RemotePlayer> remotePlayerList = new List<RemotePlayer>();
-
-	public delegate void OnStatusChanged(int newState);
-	private Dictionary<int, OnStatusChanged> onStatusChangedMap = new Dictionary<int, OnStatusChanged>();
 
     private Dictionary<int, ClientData> clientDataMap;
     private Dictionary<int, ClientData> clientDataMapBuffer;
     private System.Object clientDataMapLock;
-
-	// add onstate change delegation.
-	public void addOnStatusChangedMap(int index, OnStatusChanged listener)
-	{
-		try{
-        	onStatusChangedMap.Add (index, listener);
-		}
-		catch(ArgumentException){
-			onStatusChangedMap [index] = listener;
-		}
-	}
 
     public void OnDataUpdated(List<ClientData> clientDataList)
 	{
@@ -114,18 +100,6 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
 	{
         clientDataMap = new Dictionary<int, ClientData>();
         clientDataMapLock = new System.Object();
-
-		OnStatusChanged onStatusChanged = null;
-		for (int i = 0; i < remotePlayerList.Count; ++i) {
-			try{
-				onStatusChangedMap.Add(i, onStatusChanged);
-			}
-			catch(ArgumentException){
-				onStatusChangedMap [i] = onStatusChanged;
-			}
-		}
-			
-
     }
 
 	void Update()
@@ -139,13 +113,6 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
 
                 if (remotePlayerList[id] == null) 
 					continue;
-				
-				// check if current remotePlayer's status is changed
-				ClientData lastRemoteClientData = remotePlayerList [id].clientData;
-				if (lastRemoteClientData != null && onStatusChangedMap[id] != null) {
-					if (lastRemoteClientData.status != clientDataMap [id].status)
-                        onStatusChangedMap[id] (clientDataMap [id].status);		
-				}
 
 				// update clientData here.
 				remotePlayerList [id].clientData = clientDataMap [id];

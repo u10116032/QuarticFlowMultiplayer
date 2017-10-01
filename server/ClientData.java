@@ -2,9 +2,9 @@ import java.io.*;
 
 public class ClientData {
 	
-	// Database Entry
-
+	// Database Entry	
 	private int id;
+	private int status;
 	private int pairId;
 	private int roomNumber;
 	private boolean online;
@@ -16,6 +16,7 @@ public class ClientData {
 	public ClientData(int id)
 	{
 		this.id = id;
+		this.status = 0;
 		this.pairId = -1; // -1 represent non paired.
 		this.roomNumber = -1; // -1 represent non paired.
 		this.online = false;
@@ -36,6 +37,16 @@ public class ClientData {
 	public int getId()
 	{
 		return id;
+	}
+	
+	public void setStatus(int status)
+	{
+		this.status = status;
+	}
+
+	public int getStatus()
+	{
+		return this.status;
 	}
 
 	public void setRoomNumber(int roomNumber)
@@ -78,9 +89,10 @@ public class ClientData {
 		return playerData;
 	}
 
+	// TODO: add score size
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(95);
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(98);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{
@@ -97,13 +109,15 @@ public class ClientData {
 		return dataStream.toByteArray();
 	}
 
+	// TODO: add score
 	@Override
 	public String toString()
 	{
 		String thisString = "id: " + id + 
-		"pairId: " + pairId +
-		"roomNumber: " + roomNumber + 
-		"online" + online +
+		", status: " + status + 
+		", pairId: " + pairId +
+		", roomNumber: " + roomNumber + 
+		", online" + online +
 		",playerData: " + playerData.toString();
 
 		return thisString;

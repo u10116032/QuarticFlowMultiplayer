@@ -44,6 +44,7 @@ public class Manager {
 	private OnPairIdReceivedListener onPairIdReceivedListener;
 	private OnLoggedinListener onLoggedinListener;
 	private OnDisconnectedListener onDisconnectedLinstener;
+	private OnNewStatusChangedListener onNewStatusChangedListner;
 
 	public void SetOnNetworkDataUpdatedListener(OnNetworkDataUpdatedListener onNetworkDataUpdatedListener)
 	{
@@ -65,6 +66,10 @@ public class Manager {
 		this.onDisconnectedLinstener = onDisconnectedLinstener;
 	}
 
+	public void SetOnNewStatusChangedListener(OnNewStatusChangedListener onNewStatusChangedListner){
+		this.onNewStatusChangedListner = onNewStatusChangedListner;
+	}
+
 	public void OnNetworkDataUpdated(List<ClientData> clientDataList){
 		if(onNetworkDataUpdatedListener != null)
 			onNetworkDataUpdatedListener.OnDataUpdated (clientDataList);
@@ -82,6 +87,12 @@ public class Manager {
 			onLoggedinListener.OnLoggedin ();
 	}
 
+	public void OnNewStatusChanged(int newStatus)
+	{
+		if (onNewStatusChangedListner != null)
+			onNewStatusChangedListner.OnNewStatusChanged (newStatus);
+	}
+
 	private Manager ()
 	{
         clientData = new ClientData();
@@ -92,6 +103,7 @@ public class Manager {
         requestMap["SUCCESS"] = new SuccessHandler(this);
 		requestMap["$"] = new StreamDataHandler(this);
 		requestMap["PAIRID"] = new PairIdHandler(this);
+		requestMap["NEWSTATUS"] = new NewStatusHandler (this);
 
         requestQueueLock = new System.Object();
         runningLock = new System.Object();
@@ -120,6 +132,11 @@ public class Manager {
         requestQueue.Enqueue(Encoding.UTF8.GetBytes("CLOSE"));
     }
 		
+	public void ChangeStatus(int status)
+	{
+		requestQueue.Enqueue(Encoding.UTF8.GetBytes("STATUS " + status.ToString()));
+	}
+
 	private void InitialConnect (string remoteIp) {
 		Debug.Log("Attempt connection with server...");
 
@@ -212,6 +229,7 @@ public class Manager {
     {     
         try {
             byte[] package = new byte[requestByte.Length + 2];
+			string requestType = Encoding.UTF8.GetString(requestByte);
 
             Array.Copy(requestByte, package, requestByte.Length);
             package[package.Length - 2] = Convert.ToByte('\r');
@@ -219,7 +237,7 @@ public class Manager {
 
             stream.Write(package, 0, package.Length);
 
-            if (requestByte.ToString() == "CLOSE") {
+			if (requestType == "CLOSE") {
                 SetRunning(false);
                 if (tcpClient != null) {
                     tcpClient.Close();
@@ -229,7 +247,7 @@ public class Manager {
             }
 
             //stream.Flush();
-            Debug.Log("Send: " + Encoding.UTF8.GetString(requestByte));
+			Debug.Log("Send: " + requestType);
         }
         catch (Exception e) {
             SetRunning(false);
@@ -304,10 +322,10 @@ public class Manager {
             return running;
         }
     }
-		
-    public void UpdateClientData(byte status, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
+
+    public void UpdateClientData(int score, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
     {
-		clientData.status = status;
+		clientData.score = score;
 
 		clientData.breathDegree = breathDegree;
 		clientData.breathHeight = breathHeight;

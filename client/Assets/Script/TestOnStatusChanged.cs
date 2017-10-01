@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 
-public class TestOnStatusChanged : MonoBehaviour {
 
-    void Start()
-    {
-        // Instantiate delegate with lambda expression
-        RemotePlayerController.OnStatusChanged onStatusChanged = newState => Debug.Log("Change State to " + newState);
+// TODO: No need to use this since status change can be handled in handler.
+public class TestOnStatusChanged : MonoBehaviour, OnNewStatusChangedListener {
 
-        // set OnStateChanged per remote player by id
-        RemotePlayerController remotePlayerController = GameObject.Find("RemotePlayer").GetComponent<RemotePlayerController>();   
-        remotePlayerController.addOnStatusChangedMap(0, onStatusChanged);
-    }
+	// demo for implement OnNewStatusChanged(int newState)
+	public void OnNewStatusChanged(int newState)
+	{
+		Debug.Log ("change to new state: " + newState.ToString ());
+	}
 
 }

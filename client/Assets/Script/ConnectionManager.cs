@@ -7,7 +7,9 @@ public class ConnectionManager : MonoBehaviour {
 
 	public string remoteIp = "140.112.31.113";
 	public int LoginId;
-	public int status = 0;
+	public int Status = 0;
+
+	public int Score = 0;
 
 	public float breathDegree = 0.0f;
 	public float breathHeight = 0.0f;
@@ -23,6 +25,8 @@ public class ConnectionManager : MonoBehaviour {
 		manager.SetOnPairIdReceivedListener (new TestPairIdListener());
 		manager.SetOnLoggedinListener (new TestLogedinListener());
 		manager.SetOnDisconnectedListener (new TestDisconnectedListener());
+
+		manager.SetOnNewStatusChangedListener (new TestOnStatusChanged ());
     }
 	
 	// Update is called once per frame
@@ -37,7 +41,11 @@ public class ConnectionManager : MonoBehaviour {
 		if (Input.GetKeyDown(KeyCode.D))
 			manager.StopConnection ();
 
-		manager.UpdateClientData ((byte)status, breathDegree, breathHeight, head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
+		if (Input.GetKeyDown (KeyCode.W))
+			manager.ChangeStatus (Status);
+
+		// TODO: add score
+		manager.UpdateClientData (Score, breathDegree, breathHeight, head.transform.position, head.transform.rotation, leftHand.transform.position, leftHand.transform.rotation, rightHand.transform.position, rightHand.transform.rotation);
 	}
 
 //	private IEnumerator ConnectTask()

@@ -78,4 +78,16 @@ public enum GameDatabase {
 		return clientDataMap.get(id);
 		
 	}
+
+	public List<ClientData> getClientDataByRoomNumber(int selfId, int roomId)
+	{
+		List<ClientData> clientDatas = new ArrayList<>();
+
+		for (ClientData clientData : clientDataMap.values()){
+			if (clientData.getRoomNumber() == roomId && clientData.getId() != selfId)
+				clientDatas.add(clientData);
+		}
+
+		return clientDatas;
+	}
 }

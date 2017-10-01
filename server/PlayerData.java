@@ -2,9 +2,8 @@ import java.io.*;
 import java.util.Optional;
 
 public class PlayerData{
+	private int score;
 
-	private int status;
-	
 	private float breathDegree;
 	private float breathHeight;
 
@@ -12,9 +11,9 @@ public class PlayerData{
 	private Transform leftHand;
 	private Transform rightHand;
 
-	public PlayerData(int status, float breathDegree, float breathHeight, Transform head, Transform leftHand, Transform rightHand)
+	public PlayerData(int score, float breathDegree, float breathHeight, Transform head, Transform leftHand, Transform rightHand)
 	{
-		this.status = status;
+		this.score = score;
 
 		this.breathDegree = breathDegree;
 		this.breathHeight = breathHeight;
@@ -30,7 +29,7 @@ public class PlayerData{
 			ByteArrayInputStream rawDataStream = new ByteArrayInputStream(rawData);
 			DataInputStream dataStream = new DataInputStream(rawDataStream);
 
-			int status = (int)(Optional.ofNullable(dataStream.readByte()).orElse((byte)0));
+			int score = Optional.ofNullable(dataStream.readInt()).orElse(0);
 
 			float breathDegree = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
 			float breathHeight = Optional.ofNullable(dataStream.readFloat()).orElse(0.0f);
@@ -67,20 +66,20 @@ public class PlayerData{
 
 			Transform rightHand = new Transform(positionX, positionY, positionZ, quaternionX, quaternionY, quaternionZ, quaternionW);
 
-			playerData =  new PlayerData(status, breathDegree, breathHeight, head, leftHand, rightHand);
+			playerData =  new PlayerData(score, breathDegree, breathHeight, head, leftHand, rightHand);
 		}
 		catch(Exception e){
-			e.printStackTrace();
-			QFLogger.INSTANCE.Log("parse error");
+			// e.printStackTrace();
+			QFLogger.INSTANCE.Log("PlayerData parse error");
 			playerData = null;
 		}
 
 		return playerData;
 	}
 
-	public int getStatus()
+	public int getScore()
 	{
-		return status;
+		return this.score;
 	}
 
 	public float getBreathDegree()
@@ -110,11 +109,11 @@ public class PlayerData{
 
 	public byte[] toByteArray()
 	{
-		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(93);
+		ByteArrayOutputStream dataStream = new ByteArrayOutputStream(96);
 		DataOutputStream dataWriter = new DataOutputStream(dataStream);
 
 		try{
-			dataWriter.writeByte(status);
+			dataWriter.writeInt(score);
 
 			dataWriter.writeFloat(breathDegree);
 			dataWriter.writeFloat(breathHeight);
@@ -138,7 +137,7 @@ public class PlayerData{
 	@Override
 	public String toString()
 	{
-		String thisString = "status: " + status +
+		String thisString = "score: " + score + 
 		", breathDegree: " + breathDegree +
 		", breathHeight: " + breathHeight + 
 		", head: " + head.toString() + 

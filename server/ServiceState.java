@@ -13,6 +13,7 @@ public abstract class ServiceState {
 		
 		// TODO: $ request should not be here, it should be in the constructor of PairState. However, bugs exist.
 		requestHandlerMap.put("$", new StreamDataHandler(service));	
+		requestHandlerMap.put("STATUS", new StatusHandler(service));	
 	}
 
 	public void requestExecute(String requestType, byte[] data)
