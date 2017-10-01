@@ -51,6 +51,9 @@ public class ConnectionService {
 		while (true) {
 			try{
 				byte[] requestBytes = readRequestLine();
+				if (requestBytes == null)
+					continue;
+				
 				List<byte[]> tokenList = splitRequestLine(requestBytes);
 
 				String requestType = new String(tokenList.get(0), "UTF-8");
@@ -59,10 +62,6 @@ public class ConnectionService {
 			}
 			catch(IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
-				break;
-			}
-			catch(NullPointerException e){
-				e.printStackTrace();
 				break;
 			}
 		}

@@ -39,6 +39,7 @@ public class Manager {
     private Dictionary<String, ResponseHandler> requestMap;
 
     private ClientData clientData;
+	private System.Object clientDataLock;
 
 	private OnNetworkDataUpdatedListener onNetworkDataUpdatedListener;
 	private OnPairIdReceivedListener onPairIdReceivedListener;
@@ -107,7 +108,7 @@ public class Manager {
 
         requestQueueLock = new System.Object();
         runningLock = new System.Object();
-
+		clientDataLock = new System.Object ();
 		SetRunning(false);
 	}
 
@@ -183,6 +184,8 @@ public class Manager {
         {
             try {
                 byte[] requestBytes = ReceiveResponse();
+				if(requestBytes == null)
+					continue;
 
                 List<byte[]> tokenList = SplitResponseLine(requestBytes);
 
@@ -325,27 +328,30 @@ public class Manager {
 
     public void UpdateClientData(int score, float breathDegree, float breathHeight, Vector3 headPosition, Quaternion headPose, Vector3 leftHandPosition, Quaternion leftHandPose, Vector3 rightHandPosition, Quaternion rightHandPose)
     {
-		clientData.score = score;
+		lock (clientDataLock) {
+			clientData.score = score;
 
-		clientData.breathDegree = breathDegree;
-		clientData.breathHeight = breathHeight;
+			clientData.breathDegree = breathDegree;
+			clientData.breathHeight = breathHeight;
 
-		if (headPosition != null || headPose != null || leftHandPosition != null || leftHandPose != null || rightHandPosition != null || rightHandPose != null) {
-			clientData.headPosition = headPosition;
-			clientData.headPose = headPose;
+			if (headPosition != null && headPose != null && leftHandPosition != null && leftHandPose != null && rightHandPosition != null && rightHandPose != null) {
+				clientData.headPosition = headPosition;
+				clientData.headPose = headPose;
 
-			clientData.leftHandPosition = leftHandPosition;
-			clientData.leftHandPose = leftHandPose;
+				clientData.leftHandPosition = leftHandPosition;
+				clientData.leftHandPose = leftHandPose;
 
-			clientData.rightHandPosition = rightHandPosition;
-			clientData.rightHandPose = rightHandPose;
-		}
-        	
+				clientData.rightHandPosition = rightHandPosition;
+				clientData.rightHandPose = rightHandPose;
+			}
+		}	
     }
 
     public ClientData GetClientData()
     {
-        return this.clientData;
+		lock (clientDataLock) {
+			return this.clientData;
+		}
     }
 }
 	
