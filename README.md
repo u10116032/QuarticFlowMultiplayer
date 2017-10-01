@@ -7,10 +7,10 @@ In this version, the user can login to the server, and waiting for pair. When th
  - Client Network Connection Process:
      StartConnection(remoteIp) -> Login(id) -> StopConnection()
  
-## Server -> Client (95 Bytes):
+## Server -> Client (98 Bytes):
  - byte: id
  - byte: pairId
- - byte: status
+ - int: score
  - float: breathDegree
  - float: breathHeight
  - Transform: head
@@ -18,10 +18,27 @@ In this version, the user can login to the server, and waiting for pair. When th
  - Transform: rHand
 
 
-## Client -> Server (93 Bytes):
- - byte: status
+## Client -> Server (96 Bytes):
+ - int: score
  - float: breathDegree
  - float: breathHeight
  - Transform: head
  - Transform: lHand
  - Transform: rHand
+
+## Request/Response Type:
+
+[Request/Response Type] [data]
+
+### Server -> Client:
+ - NEWSTATUS [data]
+ - PAIRID [data]
+ - SUCCESS 
+ - $ [data]
+
+### Client -> Server:
+ - ['\0']
+ - $ [data]
+ - CLOSE
+ - STATUS [data]
+ - LOGIN [data]
