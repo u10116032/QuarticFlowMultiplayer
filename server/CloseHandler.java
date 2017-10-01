@@ -19,10 +19,11 @@ public class CloseHandler extends RequestHandler{
 
 			int roomNumber = clientData.getRoomNumber();
 			WaitLineQueue.INSTANCE.releaseRoomNumber(roomNumber);
-			clientData.setRoomNumber(-1); 
-			
-			GameDatabase.INSTANCE.updateClientData(id, clientData);
+			clientData.setRoomNumber(-1); 	
 		}
+
+		clientData.setStatus(0);
+		GameDatabase.INSTANCE.updateClientData(id, clientData);
 
 		service.closeService();
 		QFLogger.INSTANCE.Log("Service Logout /id: " + service.getId());
