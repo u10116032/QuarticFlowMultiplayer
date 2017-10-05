@@ -118,18 +118,18 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
 				remotePlayerList [id].clientData = clientDataMap [id];
 				
                 if (remotePlayerList[id].Head != null) { 
-                    remotePlayerList[id].Head.transform.localPosition = clientDataMap[id].headPosition;
-                    remotePlayerList[id].Head.transform.localRotation = clientDataMap[id].headPose;
+					remotePlayerList [id].Head.transform.localPosition = Vector3.Lerp (remotePlayerList [id].Head.transform.localPosition, clientDataMap[id].headPosition, 0.5f);
+					remotePlayerList [id].Head.transform.localRotation = Quaternion.Lerp (remotePlayerList [id].Head.transform.localRotation, clientDataMap[id].headPose, 0.5f);
                 }
 
                 if (remotePlayerList[id].LeftHand != null) {
-                    remotePlayerList[id].LeftHand.transform.localPosition = clientDataMap[id].leftHandPosition;
-                    remotePlayerList[id].LeftHand.transform.localRotation = clientDataMap[id].leftHandPose;
+					remotePlayerList[id].LeftHand.transform.localPosition = Vector3.Lerp (remotePlayerList[id].LeftHand.transform.localPosition, clientDataMap[id].leftHandPosition, 0.5f);
+					remotePlayerList[id].LeftHand.transform.localRotation = Quaternion.Lerp (remotePlayerList[id].LeftHand.transform.localRotation, clientDataMap[id].leftHandPose, 0.5f);
                 }
 
                 if (remotePlayerList[id].RightHand != null) {
-                    remotePlayerList[id].RightHand.transform.localPosition = clientDataMap[id].rightHandPosition;
-                    remotePlayerList[id].RightHand.transform.localRotation = clientDataMap[id].rightHandPose;
+					remotePlayerList[id].RightHand.transform.localPosition = Vector3.Lerp (remotePlayerList[id].RightHand.transform.localPosition, clientDataMap[id].rightHandPosition, 0.5f);
+					remotePlayerList[id].RightHand.transform.localRotation = Quaternion.Lerp (remotePlayerList[id].RightHand.transform.localRotation, clientDataMap[id].rightHandPose, 0.5f);
                 }
                 
             }
