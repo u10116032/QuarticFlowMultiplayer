@@ -353,5 +353,12 @@ public class Manager {
 			return this.clientData;
 		}
     }
+
+	public void SetClientDataPairId(int pairId)
+	{
+		lock (clientDataLock) {
+			this.clientData.pairId = pairId;
+		}
+	}
 }
 	

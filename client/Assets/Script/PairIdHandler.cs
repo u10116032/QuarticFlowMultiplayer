@@ -13,6 +13,7 @@ public class PairIdHandler : ResponseHandler {
 	public override void execute (byte[] contents)
 	{
 		int selfPairId = contents[0];
+		manager.SetClientDataPairId (selfPairId);
 		manager.OnPairIdReceived (selfPairId);
 
 		clientDataThread = new Thread(clientDataTask);
