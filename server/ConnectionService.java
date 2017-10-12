@@ -55,6 +55,8 @@ public class ConnectionService {
 					continue;
 				
 				List<byte[]> tokenList = splitRequestLine(requestBytes);
+				if (tokenList.size() == 0)
+					continue;
 
 				String requestType = new String(tokenList.get(0), "UTF-8");
 				state.requestExecute(requestType, tokenList.get(1 % tokenList.size()));
