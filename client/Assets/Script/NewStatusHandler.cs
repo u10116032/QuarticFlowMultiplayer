@@ -15,6 +15,6 @@ public class NewStatusHandler : ResponseHandler {
 		manager.OnNewStatusChanged (newStatus);
 
 		ThirdPartManager thirdPartManager = ThirdPartManager.Instance;
-		thirdPartManager.SetStatus (newStatus);
+		thirdPartManager.SetCurrentStatus (newStatus);
 	}
 }
