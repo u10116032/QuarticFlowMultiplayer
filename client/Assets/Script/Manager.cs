@@ -357,7 +357,7 @@ public class Manager {
 	public void SetClientDataPairId(int pairId)
 	{
 		lock (clientDataLock) {
-			this.clientData.pairId = pairId;
+			this.clientData.pairId = (byte)pairId;
 		}
 	}
 }

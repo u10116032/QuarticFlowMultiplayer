@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Threading;
+using System.Collections;
+using UnityEngine;
+using System.Collections.Generic;
+using System.IO;
 
 public class ThirdPartManager {
 
@@ -28,11 +32,9 @@ public class ThirdPartManager {
 		}
 	}
 
-	public ThirdPartManager(Manager manager, RemotePlayerController remotePlayerController)
+	public ThirdPartManager()
 	{
 		this.udpManager = new ThirdPartUdpManager ();
-		this.manager = manager;
-		this.remotePlayerController = remotePlayerController;
 	}
 
 	public void StartSend()
@@ -49,7 +51,12 @@ public class ThirdPartManager {
 
 	private void SendTask()
 	{
+		// send: status playerByte otherPlayerByte
 		while (isSending) {
+
+			if (manager == null || remotePlayerController == null)
+				continue;
+
 			byte[] playerDataBytes = manager.GetClientData().ToByteArray();
 			byte[] otherPlayerDataBytes = remotePlayerController.GetRemoteClientDataByIndex (0).ToByteArray();
 
@@ -79,13 +86,87 @@ public class ThirdPartManager {
 	{
 		while (isReceiving) {
 			byte[] packet = udpManager.Receive ();
-			// TODO: parse packet
+			int newStatus = Convert.ToInt32 (packet [0]);
+
+			byte[] cropPacket = new byte[packet.Length - 1];
+			Array.Copy (cropPacket, 0, packet, 1, packet.Length - 1);
+			List<ClientData> clientDataList = Parse (cropPacket);
+
+
 		}
 	}
 
-	public void SetStatus()
+	public void SetStatus(int status)
 	{
 		this.status = status;
 	}
 
+	public List<ClientData> Parse(byte[] rawData)
+	{
+		List<ClientData> clientDataList = new List<ClientData>();
+
+		MemoryStream stream = new MemoryStream(rawData);
+		BinaryReader reader = new BinaryReader(stream);
+
+		while (true) {
+			try {
+
+				int score = reader.ReadInt32();
+
+				float breathDegree = reader.ReadSingle();
+				float breathHeight = reader.ReadSingle();
+
+				float pX = reader.ReadSingle();
+				float pY = reader.ReadSingle();
+				float pZ = reader.ReadSingle();
+				Vector3 headPosition = new Vector3(pX, pY, pZ);
+
+				float qX = reader.ReadSingle();
+				float qY = reader.ReadSingle();
+				float qZ = reader.ReadSingle();
+				float qW = reader.ReadSingle();
+				Quaternion headPose= new Quaternion(qX, qY, qZ, qW);
+
+				pX = reader.ReadSingle();
+				pY = reader.ReadSingle();
+				pZ = reader.ReadSingle();
+				Vector3 leftHandPosition = new Vector3(pX, pY, pZ);
+
+				qX = reader.ReadSingle();
+				qY = reader.ReadSingle();
+				qZ = reader.ReadSingle();
+				qW = reader.ReadSingle();
+				Quaternion leftHandPose = new Quaternion(qX, qY, qZ, qW);
+
+				pX = reader.ReadSingle();
+				pY = reader.ReadSingle();
+				pZ = reader.ReadSingle();
+				Vector3 rightHandPosition = new Vector3(pX, pY, pZ);
+
+				qX = reader.ReadSingle();
+				qY = reader.ReadSingle();
+				qZ = reader.ReadSingle();
+				qW = reader.ReadSingle();
+				Quaternion rightHandPose = new Quaternion(qX, qY, qZ, qW);
+
+				clientDataList.Add(new ClientData((byte)0, (byte)0, score, breathDegree, breathHeight, headPosition, headPose, leftHandPosition, leftHandPose, rightHandPosition, rightHandPose));
+			}
+			catch (Exception e) {
+				break;
+			}
+		}
+
+		return clientDataList;
+	}
+
+
+	public void SetManager(Manager manager)
+	{
+		this.manager = manager;
+	}
+
+	public void SetRemotePlayerController(RemotePlayerController remotePlayerController)
+	{
+		this.remotePlayerController = remotePlayerController;
+	}
 }

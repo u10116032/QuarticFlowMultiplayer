@@ -71,4 +71,9 @@ public class ConnectionManager : MonoBehaviour {
 		manager.StopConnection ();
 	}
 
+	public Manager GetManager()
+	{
+		return this.manager;
+	}
+
 }
