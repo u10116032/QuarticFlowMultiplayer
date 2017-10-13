@@ -11,13 +11,14 @@ public class ThirdPartUdpManager  {
 
 	public ThirdPartUdpManager()
 	{
-		remoteEndPoint = new IPEndPoint (IPAddress.Parse ("127.0.0.1"), port);
+		remoteEndPoint = new IPEndPoint (IPAddress.Parse ("192.168.50.93"), port);
 		socket = new UdpClient ();
 	}
 
 	public void Send(byte[] packet)
 	{
-		socket.Send (packet, packet.Length, remoteEndPoint);
+		int length = packet.Length;
+		socket.Send (packet, length, remoteEndPoint);
 	}
 
 	public byte[] Receive()

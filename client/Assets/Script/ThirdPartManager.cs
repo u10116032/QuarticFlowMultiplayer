@@ -20,6 +20,8 @@ public class ThirdPartManager {
 	private bool isSending;
 	private bool isReceiving;
 
+	private DateTime lastTime;
+
 	private static ThirdPartManager Instance_;
 	public static ThirdPartManager Instance
 	{
@@ -32,9 +34,10 @@ public class ThirdPartManager {
 		}
 	}
 
-	public ThirdPartManager()
+	private ThirdPartManager()
 	{
 		this.udpManager = new ThirdPartUdpManager ();
+		lastTime = DateTime.Now;
 	}
 
 	public void StartSend()
@@ -54,11 +57,19 @@ public class ThirdPartManager {
 		// send: status playerByte otherPlayerByte
 		while (isSending) {
 
-			if (manager == null || remotePlayerController == null)
+			DateTime currentTime = DateTime.Now;
+			if (currentTime.Subtract(lastTime).TotalMilliseconds < 33.0f)
 				continue;
+			lastTime = currentTime;
 
 			byte[] playerDataBytes = manager.GetClientData().ToByteArray();
-			byte[] otherPlayerDataBytes = remotePlayerController.GetRemoteClientDataByIndex (0).ToByteArray();
+			byte[] otherPlayerDataBytes;
+			try{
+				otherPlayerDataBytes = remotePlayerController.GetRemoteClientDataByIndex (0).ToByteArray();
+			}
+			catch(NullReferenceException e){
+				otherPlayerDataBytes = (new ClientData ()).ToByteArray();
+			}
 
 			byte[] packet = new byte[playerDataBytes.Length + otherPlayerDataBytes.Length + 1];
 			packet [0] = (byte)status;

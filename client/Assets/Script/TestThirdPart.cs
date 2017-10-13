@@ -12,13 +12,21 @@ public class TestThirdPart : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
 	{
-		thirdPartManager = new ThirdPartManager ();
-		thirdPartManager.SetManager (connectionManager.GetManager());
-		thirdPartManager.SetRemotePlayerController (remotePlayerController);
+		thirdPartManager = ThirdPartManager.Instance ;
 
-		thirdPartManager.StartSend ();
 	}
-	
+
+	void Update()
+	{
+		if (Input.GetKeyDown (KeyCode.Q)) {
+			thirdPartManager.SetManager (connectionManager.GetManager());
+			thirdPartManager.SetRemotePlayerController (remotePlayerController);
+
+			thirdPartManager.StartSend ();
+		}
+			
+	}
+
 	// Update is called once per frame
 	void OnDestroy () 
 	{
