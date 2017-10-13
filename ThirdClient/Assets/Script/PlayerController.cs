@@ -30,14 +30,14 @@ public class PlayerController : MonoBehaviour, OnDataUpdatedListener {
 		}
 
 		if (remotePlayer.clientData != null) {
-			remotePlayer.Head.transform.localPosition = localPlayer.clientData.headPosition;
-			remotePlayer.Head.transform.localRotation = localPlayer.clientData.headPose;
+			remotePlayer.Head.transform.localPosition = remotePlayer.clientData.headPosition;
+			remotePlayer.Head.transform.localRotation = remotePlayer.clientData.headPose;
 
-			remotePlayer.LeftHand.transform.localPosition = localPlayer.clientData.leftHandPosition;
-			remotePlayer.LeftHand.transform.localRotation = localPlayer.clientData.leftHandPose;
+			remotePlayer.LeftHand.transform.localPosition = remotePlayer.clientData.leftHandPosition;
+			remotePlayer.LeftHand.transform.localRotation = remotePlayer.clientData.leftHandPose;
 
-			remotePlayer.RightHand.transform.localPosition = localPlayer.clientData.rightHandPosition;
-			remotePlayer.RightHand.transform.localRotation = localPlayer.clientData.rightHandPose;
+			remotePlayer.RightHand.transform.localPosition = remotePlayer.clientData.rightHandPosition;
+			remotePlayer.RightHand.transform.localRotation = remotePlayer.clientData.rightHandPose;
 		}
 
 	}
