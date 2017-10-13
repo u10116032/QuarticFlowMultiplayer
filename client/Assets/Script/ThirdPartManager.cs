@@ -1,18 +1,21 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Collections;
-using UnityEngine;
 using System.Collections.Generic;
-using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using UnityEngine;
 
 public class ThirdPartManager {
 
 	private int status = 0;
 
+	private UdpClient udpClient;
+	private IPEndPoint remoteEndPoint;
+
 	private Manager manager;
 	private RemotePlayerController remotePlayerController;
-
-	private ThirdPartUdpManager udpManager;
 
 	private Thread SendThread;
 	private Thread ReceiveThread;
@@ -36,13 +39,16 @@ public class ThirdPartManager {
 
 	private ThirdPartManager()
 	{
-		this.udpManager = new ThirdPartUdpManager ();
 		lastTime = DateTime.Now;
 	}
 
 	public void StartSend()
 	{
 		isSending = true;
+
+		remoteEndPoint = new IPEndPoint (IPAddress.Parse ("192.168.50.93"), 41000);
+		udpClient = new UdpClient ();
+
 		SendThread = new Thread (SendTask);
 		SendThread.Start ();
 	}
@@ -70,20 +76,24 @@ public class ThirdPartManager {
 			catch(NullReferenceException e){
 				otherPlayerDataBytes = (new ClientData ()).ToByteArray();
 			}
-
+			 
 			byte[] packet = new byte[playerDataBytes.Length + otherPlayerDataBytes.Length + 1];
 			packet [0] = (byte)status;
 
 			Array.Copy (playerDataBytes, 0, packet, 1, playerDataBytes.Length);
 			Array.Copy (otherPlayerDataBytes, 0, packet, 1 + playerDataBytes.Length, otherPlayerDataBytes.Length);
 
-			udpManager.Send (packet);
+			udpClient.Send (packet, packet.Length, remoteEndPoint);
 		}
 	}
 
 	public void StartReceive()
 	{
 		isReceiving = true;
+
+		remoteEndPoint = new IPEndPoint (IPAddress.Any, 0);
+		udpClient = new UdpClient (41000);
+
 		ReceiveThread = new Thread (ReceiveTask);
 		ReceiveThread.Start ();
 	}
@@ -96,11 +106,11 @@ public class ThirdPartManager {
 	private void ReceiveTask()
 	{
 		while (isReceiving) {
-			byte[] packet = udpManager.Receive ();
+			byte[] packet = udpClient.Receive (ref remoteEndPoint);
 			int newStatus = Convert.ToInt32 (packet [0]);
 
 			byte[] cropPacket = new byte[packet.Length - 1];
-			Array.Copy (cropPacket, 0, packet, 1, packet.Length - 1);
+			Array.Copy (packet, 1, cropPacket, 0, packet.Length - 1);
 			List<ClientData> clientDataList = Parse (cropPacket);
 
 
@@ -117,7 +127,7 @@ public class ThirdPartManager {
 		List<ClientData> clientDataList = new List<ClientData>();
 
 		MemoryStream stream = new MemoryStream(rawData);
-		BinaryReader reader = new BinaryReader(stream);
+		BigEndianBinaryReader reader = new BigEndianBinaryReader(stream);
 
 		while (true) {
 			try {
