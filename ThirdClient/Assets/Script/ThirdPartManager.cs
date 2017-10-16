@@ -55,6 +55,7 @@ public class ThirdPartManager {
 
 		remoteEndPoint = new IPEndPoint (IPAddress.Any, 0);
 		udpClient = new UdpClient (41000);
+		udpClient.Client.ReceiveTimeout = 33;
 
 		ReceiveThread = new Thread (ReceiveTask);
 		ReceiveThread.Start ();
@@ -68,20 +69,25 @@ public class ThirdPartManager {
 	private void ReceiveTask()
 	{
 		while (isReceiving) {
-			byte[] packet = udpClient.Receive (ref remoteEndPoint);
-			int newStatus = Convert.ToInt32 (packet [0]);
+			try{
+				byte[] packet = udpClient.Receive (ref remoteEndPoint);
+				int newStatus = Convert.ToInt32 (packet [0]);
 
-			if (currentStatus != newStatus) {
-				currentStatus = newStatus;
-				onNewStatusChangedListener.OnNewStatusChanged (newStatus);
+				if (currentStatus != newStatus) {
+					currentStatus = newStatus;
+					onNewStatusChangedListener.OnNewStatusChanged (newStatus);
+				}
+					
+
+				byte[] cropPacket = new byte[packet.Length - 1];
+				Array.Copy (packet, 1, cropPacket, 0, packet.Length - 1);
+				List<ClientData> clientDataList = Parse (cropPacket);
+
+				onDataUpdatedListener.OnDataUpdated (clientDataList);
 			}
+			catch(SocketException e){
 				
-
-			byte[] cropPacket = new byte[packet.Length - 1];
-			Array.Copy (packet, 1, cropPacket, 0, packet.Length - 1);
-			List<ClientData> clientDataList = Parse (cropPacket);
-
-			onDataUpdatedListener.OnDataUpdated (clientDataList);
+			}
 		}
 	}
 
