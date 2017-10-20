@@ -39,11 +39,11 @@ public class ThirdPartManager {
 		lastTime = DateTime.Now;
 	}
 
-	public void StartSend()
+	public void StartSend(string remoteIp)
 	{
 		isSending = true;
 
-		remoteEndPoint = new IPEndPoint (IPAddress.Parse ("192.168.50.93"), 41000);
+		remoteEndPoint = new IPEndPoint (IPAddress.Parse (remoteIp), 41000);
 		udpClient = new UdpClient ();
 
 		SendThread = new Thread (SendTask);

@@ -6,6 +6,7 @@ public class TestThirdPart : MonoBehaviour {
 
 	public ConnectionManager connectionManager;
 	public RemotePlayerController remotePlayerController;
+	public string remoteIp = "192.168.50.93";
 
 	private ThirdPartManager thirdPartManager;
 
@@ -22,7 +23,7 @@ public class TestThirdPart : MonoBehaviour {
 			thirdPartManager.SetManager (connectionManager.GetManager());
 			thirdPartManager.SetRemotePlayerController (remotePlayerController);
 
-			thirdPartManager.StartSend ();
+			thirdPartManager.StartSend (remoteIp);
 		}
 			
 	}
