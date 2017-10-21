@@ -55,7 +55,6 @@ public class ThirdPartManager {
 
 		remoteEndPoint = new IPEndPoint (IPAddress.Any, 0);
 		udpClient = new UdpClient (41000);
-		udpClient.Client.ReceiveTimeout = 33;
 
 		ReceiveThread = new Thread (ReceiveTask);
 		ReceiveThread.Start ();
@@ -64,6 +63,7 @@ public class ThirdPartManager {
 	public void StopReceive()
 	{
 		isReceiving = false;
+		udpClient.Close ();
 	}
 
 	private void ReceiveTask()
@@ -86,7 +86,7 @@ public class ThirdPartManager {
 				onDataUpdatedListener.OnDataUpdated (clientDataList);
 			}
 			catch(SocketException e){
-				
+				Debug.Log ("Socket is closed.");
 			}
 		}
 	}
