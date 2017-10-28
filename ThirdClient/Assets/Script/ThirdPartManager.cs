@@ -75,7 +75,8 @@ public class ThirdPartManager {
 
 				if (currentStatus != newStatus) {
 					currentStatus = newStatus;
-					onNewStatusChangedListener.OnNewStatusChanged (newStatus);
+					if (onNewStatusChangedListener != null)
+						onNewStatusChangedListener.OnNewStatusChanged (newStatus);
 				}
 					
 
@@ -83,7 +84,8 @@ public class ThirdPartManager {
 				Array.Copy (packet, 1, cropPacket, 0, packet.Length - 1);
 				List<ClientData> clientDataList = Parse (cropPacket);
 
-				onDataUpdatedListener.OnDataUpdated (clientDataList);
+				if (onDataUpdatedListener != null)
+					onDataUpdatedListener.OnDataUpdated (clientDataList);
 			}
 			catch(SocketException e){
 				Debug.Log ("Socket is closed.");
