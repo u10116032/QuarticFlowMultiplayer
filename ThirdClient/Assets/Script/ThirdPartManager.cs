@@ -37,6 +37,8 @@ public class ThirdPartManager {
 	private ThirdPartManager()
 	{
 		lastTime = DateTime.Now;
+
+		isReceiving = false;
 	}
 
 	public void SetOnDataUpdatedListener(OnDataUpdatedListener onDataUpdatedListener)
@@ -51,6 +53,9 @@ public class ThirdPartManager {
 
 	public void StartReceive()
 	{
+		if (isReceiving)
+			return;
+		
 		isReceiving = true;
 
 		remoteEndPoint = new IPEndPoint (IPAddress.Any, 0);
