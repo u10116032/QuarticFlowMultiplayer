@@ -6,6 +6,7 @@ public class TestThirdPart : MonoBehaviour {
 
 	public ConnectionManager connectionManager;
 	public RemotePlayerController remotePlayerController;
+
 	public string remoteIp = "192.168.50.93";
 
 	private ThirdPartManager thirdPartManager;
@@ -25,20 +26,22 @@ public class TestThirdPart : MonoBehaviour {
 	void Update()
 	{
 		if (Input.GetKeyDown (KeyCode.Q)) {
-			thirdPartManager.SetManager (connectionManager.GetManager());
-			thirdPartManager.SetRemotePlayerController (remotePlayerController);
-
 			thirdPartManager.StartSend (remoteIp);
+			Debug.Log ("Start send to third part.");
 		}
 
-		RemotePlayer remotePlayer = remotePlayerController.GetRemotePlayerByIndex(0);
-		thirdPartManager.UpdateRemotePlayerTransform (remoteScore, remoteBreathDegree, remoteBreathHeight, remotePlayer.Head.transform, remotePlayer.LeftHand.transform, remotePlayer.RightHand.transform);
+		if (connectionManager != null && remotePlayerController != null) {
+			thirdPartManager.UpdateLocalPlayerClientData (connectionManager.GetManager ().GetClientData ());
+
+			RemotePlayer remotePlayer = remotePlayerController.GetRemotePlayerByIndex(0);
+			thirdPartManager.UpdateRemotePlayerClientData (remoteScore, remoteBreathDegree, remoteBreathHeight, remotePlayer.Head.transform, remotePlayer.LeftHand.transform, remotePlayer.RightHand.transform);
+		}
 			
 	}
 
-	// Update is called once per frame
-	void OnDestroy () 
+	void OnApplicationQuit () 
 	{
 		thirdPartManager.StopSend ();
+		Debug.Log ("UDP sender socket is closed.");
 	}
 }
