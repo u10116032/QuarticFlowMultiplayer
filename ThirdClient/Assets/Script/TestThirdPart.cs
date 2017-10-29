@@ -26,7 +26,7 @@ public class TestThirdPart : MonoBehaviour {
 	}
 
 	// Update is called once per frame
-	void OnDestroy () 
+	void OnApplicationQuit () 
 	{
 		thirdPartManager.StopReceive ();
 	}
