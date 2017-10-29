@@ -17,6 +17,19 @@ public class ThirdPartManager {
 	private Manager manager;
 	private RemotePlayerController remotePlayerController;
 
+	private Vector3 RemotePlayerHeadLocalPosition;
+	private Quaternion RemotePlayerHeadLocalPose;
+
+	private Vector3 RemotePlayerLeftHandPosition;
+	private Quaternion RemotePlayerLeftHandPose;
+
+	private Vector3 RemotePlayerRightHandPosition;
+	private Quaternion RemotePlayerRightHandPose;
+
+	private int remoteScore;
+	private float remoteBreathDegree;
+	private float remoteBreathHeight;
+
 	private Thread SendThread;
 	private bool isSending;
 
@@ -37,6 +50,23 @@ public class ThirdPartManager {
 	private ThirdPartManager()
 	{
 		lastTime = DateTime.Now;
+	}
+
+	public void UpdateRemotePlayerTransform(int remoteScore, float remoteBreathDegree, float remoteBreathHeight, Transform RemotePlayerHeadTransform, Transform RemotePlayerLeftHandTransform, Transform RemotePlayerRightHandTransform)
+	{
+		this.remoteScore = remoteScore;
+
+		this.remoteBreathDegree = remoteBreathDegree;
+		this.remoteBreathHeight = remoteBreathHeight;
+
+		this.RemotePlayerHeadLocalPosition = RemotePlayerHeadTransform.localPosition;
+		this.RemotePlayerHeadLocalPose = RemotePlayerHeadTransform.localRotation;
+
+		this.RemotePlayerLeftHandPosition = RemotePlayerLeftHandTransform.localPosition;
+		this.RemotePlayerLeftHandPose = RemotePlayerLeftHandTransform.localRotation;
+
+		this.RemotePlayerRightHandPosition = RemotePlayerRightHandTransform.localPosition;
+		this.RemotePlayerRightHandPose = RemotePlayerRightHandTransform.localRotation;
 	}
 
 	public void StartSend(string remoteIp)
@@ -68,7 +98,21 @@ public class ThirdPartManager {
 			byte[] playerDataBytes = manager.GetClientData().ToByteArray();
 			byte[] otherPlayerDataBytes;
 			try{
-				otherPlayerDataBytes = remotePlayerController.GetRemoteClientDataByIndex (0).ToByteArray();
+				ClientData remotePlayerClientData = new ClientData();
+				remotePlayerClientData.score = this.remoteScore;
+				remotePlayerClientData.breathDegree = this.remoteBreathDegree;
+				remotePlayerClientData.breathHeight = this.remoteBreathHeight;
+
+				remotePlayerClientData.headPosition = RemotePlayerHeadLocalPosition;
+				remotePlayerClientData.headPose = RemotePlayerHeadLocalPose;
+
+				remotePlayerClientData.leftHandPosition = RemotePlayerLeftHandPosition;
+				remotePlayerClientData.leftHandPose = RemotePlayerLeftHandPose;
+
+				remotePlayerClientData.rightHandPosition = RemotePlayerRightHandPosition;
+				remotePlayerClientData.rightHandPose = RemotePlayerRightHandPose;
+					
+				otherPlayerDataBytes = remotePlayerClientData.ToByteArray();
 			}
 			catch(NullReferenceException e){
 				otherPlayerDataBytes = (new ClientData ()).ToByteArray();

@@ -10,6 +10,11 @@ public class TestThirdPart : MonoBehaviour {
 
 	private ThirdPartManager thirdPartManager;
 
+	public int remoteScore = 0;
+	public float remoteBreathDegree = 0.0f;
+	public float remoteBreathHeight = 0.0f;
+
+
 	// Use this for initialization
 	void Start () 
 	{
@@ -25,6 +30,9 @@ public class TestThirdPart : MonoBehaviour {
 
 			thirdPartManager.StartSend (remoteIp);
 		}
+
+		RemotePlayer remotePlayer = remotePlayerController.GetRemotePlayerByIndex(0);
+		thirdPartManager.UpdateRemotePlayerTransform (remoteScore, remoteBreathDegree, remoteBreathHeight, remotePlayer.Head.transform, remotePlayer.LeftHand.transform, remotePlayer.RightHand.transform);
 			
 	}
 

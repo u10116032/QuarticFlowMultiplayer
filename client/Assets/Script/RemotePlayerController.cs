@@ -96,6 +96,11 @@ public class RemotePlayerController : MonoBehaviour, OnNetworkDataUpdatedListene
 		return remotePlayerList [index].clientData;
 	}
 
+	public RemotePlayer GetRemotePlayerByIndex(int index)
+	{
+		return remotePlayerList [index];
+	}
+
 	void Start()
 	{
         clientDataMap = new Dictionary<int, ClientData>();
