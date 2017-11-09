@@ -57,7 +57,7 @@ public class ConnectionService {
 				List<byte[]> tokenList = splitRequestLine(requestBytes);
 				if (tokenList.size() == 0)
 					continue;
-
+				
 				String requestType = new String(tokenList.get(0), "UTF-8");
 				state.requestExecute(requestType, tokenList.get(1 % tokenList.size()));
 
@@ -65,6 +65,9 @@ public class ConnectionService {
 			catch(IOException e) {
 				QFLogger.INSTANCE.Log("No response from " + socket.getInetAddress());
 				break;
+			}
+			catch(IndexOutOfBoundsException e){
+				QFLogger.INSTANCE.Log("IndexOutOfBoundsException");
 			}
 		}
 

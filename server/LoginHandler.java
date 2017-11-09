@@ -61,8 +61,10 @@ public class LoginHandler extends RequestHandler{
 		String responseType = "SUCCESS";
 		service.sendMessage(responseType.getBytes());
 
-		
+		QFLogger.INSTANCE.Log("Login id: " + id + service.getInetAddress());
+		service.setState(new LoginState(this.service));
 
+		/*
 		if (clientData.getRoomNumber() != -1 && clientData.getPairId() != -1){
 			QFLogger.INSTANCE.Log("Relogin id: " + id + service.getInetAddress());
 			service.setState(new PairState(clientData.getRoomNumber(), this.service));
@@ -71,8 +73,7 @@ public class LoginHandler extends RequestHandler{
 			QFLogger.INSTANCE.Log("Login id: " + id + service.getInetAddress());
 			service.setState(new LoginState(this.service));
 		}
-
-        
+		*/   
 	}
 
 	

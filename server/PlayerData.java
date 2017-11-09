@@ -70,7 +70,7 @@ public class PlayerData{
 		}
 		catch(Exception e){
 			// e.printStackTrace();
-			QFLogger.INSTANCE.Log("PlayerData parse error");
+			// QFLogger.INSTANCE.Log("PlayerData parse error");
 			playerData = null;
 		}
 
